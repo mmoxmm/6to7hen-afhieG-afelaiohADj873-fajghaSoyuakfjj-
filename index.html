@@ -7364,7 +7364,7 @@
 
       const tags = sv.tags || [];
       const tagsHtml = '<div style="display:flex;align-items:center;gap:2px;flex-shrink:0">'
-        + tags.map(t => '<span style="display:inline-flex;align-items:center;height:18px;line-height:1;padding:0 3px;border-radius:4px;background:var(--bg);border:0.5px solid var(--border2);color:var(--text2);font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;user-select:none;overflow:hidden" data-tag-del="' + esc(t) + '" data-id="' + sv.id + '" data-shared="' + (isShared ? 1 : 0) + '">' + esc(t) + '</span>').join('')
+        + tags.map(t => '<span class="tag-chip-filter" style="display:inline-flex;align-items:center;height:18px;line-height:1;padding:0 3px;border-radius:4px;background:var(--bg);border:0.5px solid var(--border2);color:var(--text2);font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;user-select:none;overflow:hidden" data-tag-filter="' + esc(t) + '" data-tag-name="' + esc(t) + '" data-id="' + sv.id + '" data-shared="' + (isShared ? 1 : 0) + '" data-caller="' + callerTab + '">' + esc(t) + '</span>').join('')
         + '<span class="btn-tag-add" style="display:inline-flex;align-items:center;height:18px;padding:0 5px;border-radius:4px;background:var(--bg);border:0.5px dashed var(--border2);color:var(--text3);font-size:11px;cursor:pointer;white-space:nowrap" data-id="' + sv.id + '" data-shared="' + (isShared ? 1 : 0) + '">＋</span>'
         + '</div>';
 
@@ -7512,54 +7512,72 @@
     }
 
     function bindSaveListEvents(wrap) {
-      // タグ削除（長押し）
-      wrap.querySelectorAll("[data-tag-del]").forEach(el => {
-        let pressTimer = null;
-        let didLongPress = false;
-        el.addEventListener("pointerdown", () => {
-          didLongPress = false;
-          pressTimer = setTimeout(() => {
-            didLongPress = true;
-            const tag = el.dataset.tagDel;
-            const id = +el.dataset.id;
-            const isShared = el.dataset.shared === "1";
-            // 警告ポップアップ
-            const overlay = document.createElement("div");
-            overlay.style.cssText = "position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px";
-            overlay.innerHTML = '<div style="background:var(--bg);border-radius:var(--radius-lg);padding:16px;max-width:260px;width:100%;box-shadow:0 8px 32px rgba(0,0,0,.3)">'
-              + '<div style="font-size:14px;font-weight:700;margin-bottom:6px">タグを削除</div>'
-              + '<div style="font-size:13px;color:var(--text2);margin-bottom:4px">「<strong>' + esc(tag) + '</strong>」をこのデータから削除しますか？</div>'
-              + '<div style="font-size:11px;color:var(--text3);margin-bottom:12px;line-height:1.5">タグ一覧からは削除されません。このデータへの紐付けのみ外れます。</div>'
-              + '<button id="_tdel-ok" style="width:100%;background:var(--danger);border:none;border-radius:var(--radius);color:#fff;cursor:pointer;font-family:inherit;font-size:14px;padding:9px;margin-bottom:7px;font-weight:700">削除する</button>'
-              + '<button id="_tdel-cancel" style="width:100%;background:none;border:0.5px solid var(--border2);border-radius:var(--radius);color:var(--text3);cursor:pointer;font-family:inherit;font-size:13px;padding:8px">キャンセル</button>'
-              + '</div>';
-            document.body.appendChild(overlay);
-            const close = () => overlay.remove();
-            overlay.querySelector("#_tdel-cancel").addEventListener("click", close);
-            overlay.addEventListener("click", e => { if (e.target === overlay) close(); });
-            overlay.querySelector("#_tdel-ok").addEventListener("click", async () => {
-              close();
-              const list = isShared ? lSharedSaves() : currentSaves;
-              const sv = list.find(s => s.id === id);
-              if (!sv) return;
-              sv.tags = (sv.tags || []).filter(t => t !== tag);
-              if (isShared) {
-                wSharedSaves(list);
-                renderSharedList(); renderKomaSaveList(); renderStatSaveList();
-                if (sharedToken) await sharedGistSet({ saves: lSharedSaves(), tagOrder: _tagOrder, tagSaveOrder: _tagSaveOrder });
-              } else {
-                const freshSaves2 = lSaves().map(s => s.id === sv.id ? sv : s);
-                writeSaves(freshSaves2);
-                renderSaveList(); renderKomaSaveList(); renderStatSaveList();
-                if (syncToken) await gistSet({ saves: lSaves(), mythos: { beings: customBeings, spells: customSpells }, tagOrder: _tagOrder, tagSaveOrder: _tagSaveOrder });
-              }
-              showToast("タグを削除しました");
-            });
-          }, 600);
+      // タグチップ：クリック=フィルター、ダブルタップ=削除確認ポップアップ
+      wrap.querySelectorAll("[data-tag-filter]").forEach(el => {
+        let lastTap = 0;
+        let tapTimer = null;
+
+        const showDeleteConfirm = () => {
+          const tag = el.dataset.tagName;
+          const id = +el.dataset.id;
+          const isShared = el.dataset.shared === "1";
+          const overlay = document.createElement("div");
+          overlay.style.cssText = "position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px";
+          overlay.innerHTML = '<div style="background:var(--bg);border-radius:var(--radius-lg);padding:16px;max-width:260px;width:100%;box-shadow:0 8px 32px rgba(0,0,0,.3)">'
+            + '<div style="font-size:14px;font-weight:700;margin-bottom:6px">タグを削除</div>'
+            + '<div style="font-size:13px;color:var(--text2);margin-bottom:4px">「<strong>' + esc(tag) + '</strong>」をこのデータから削除しますか？</div>'
+            + '<div style="font-size:11px;color:var(--text3);margin-bottom:12px;line-height:1.5">タグ一覧からは削除されません。このデータへの紐付けのみ外れます。</div>'
+            + '<button id="_tdel-ok" style="width:100%;background:var(--danger);border:none;border-radius:var(--radius);color:#fff;cursor:pointer;font-family:inherit;font-size:14px;padding:9px;margin-bottom:7px;font-weight:700">削除する</button>'
+            + '<button id="_tdel-cancel" style="width:100%;background:none;border:0.5px solid var(--border2);border-radius:var(--radius);color:var(--text3);cursor:pointer;font-family:inherit;font-size:13px;padding:8px">キャンセル</button>'
+            + '</div>';
+          document.body.appendChild(overlay);
+          const close = () => overlay.remove();
+          overlay.querySelector("#_tdel-cancel").addEventListener("click", close);
+          overlay.addEventListener("click", e => { if (e.target === overlay) close(); });
+          overlay.querySelector("#_tdel-ok").addEventListener("click", async () => {
+            close();
+            const list = isShared ? lSharedSaves() : currentSaves;
+            const sv = list.find(s => s.id === id);
+            if (!sv) return;
+            sv.tags = (sv.tags || []).filter(t => t !== tag);
+            if (isShared) {
+              wSharedSaves(list);
+              renderSharedList(); renderKomaSaveList(); renderStatSaveList();
+              if (sharedToken) await sharedGistSet({ saves: lSharedSaves(), tagOrder: _tagOrder, tagSaveOrder: _tagSaveOrder });
+            } else {
+              const freshSaves2 = lSaves().map(s => s.id === sv.id ? sv : s);
+              writeSaves(freshSaves2);
+              renderSaveList(); renderKomaSaveList(); renderStatSaveList();
+              if (syncToken) await gistSet({ saves: lSaves(), mythos: { beings: customBeings, spells: customSpells }, tagOrder: _tagOrder, tagSaveOrder: _tagSaveOrder });
+            }
+            showToast("タグを削除しました");
+          });
+        };
+
+        const applyFilter = () => {
+          const tag = el.dataset.tagName;
+          const caller = el.dataset.caller || 'save';
+          if (caller === 'koma') { setKomaTagFilter(tag); }
+          else if (caller === 'stats') { setStatTagFilter(tag); }
+          else {
+            // save タブは個人/共有どちらのページが開いているかで判定
+            if (currentSavePage === 'shared') setSharedTagFilter(tag);
+            else setPersonalTagFilter(tag);
+          }
+        };
+
+        el.addEventListener("click", e => {
+          e.stopPropagation();
+          const now = Date.now();
+          const isDouble = (now - lastTap) < 400;
+          lastTap = now;
+          if (isDouble) {
+            clearTimeout(tapTimer);
+            showDeleteConfirm();
+          } else {
+            tapTimer = setTimeout(() => { applyFilter(); }, 400);
+          }
         });
-        el.addEventListener("pointerup", () => clearTimeout(pressTimer));
-        el.addEventListener("pointercancel", () => clearTimeout(pressTimer));
-        el.addEventListener("click", e => { if (didLongPress) e.stopPropagation(); });
       });
 
       // タグ追加（カスタムドロップダウン版 v2）
