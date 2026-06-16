@@ -7557,12 +7557,17 @@
         const applyFilter = () => {
           const tag = el.dataset.tagName;
           const caller = el.dataset.caller || 'save';
-          if (caller === 'koma') { setKomaTagFilter(tag); }
-          else if (caller === 'stats') { setStatTagFilter(tag); }
-          else {
+          if (caller === 'koma') {
+            setKomaTagFilter(_komaTagFilter === tag ? null : tag);
+          } else if (caller === 'stats') {
+            setStatTagFilter(_statTagFilter === tag ? null : tag);
+          } else {
             // save タブは個人/共有どちらのページが開いているかで判定
-            if (currentSavePage === 'shared') setSharedTagFilter(tag);
-            else setPersonalTagFilter(tag);
+            if (currentSavePage === 'shared') {
+              setSharedTagFilter(_sharedTagFilter === tag ? null : tag);
+            } else {
+              setPersonalTagFilter(_personalTagFilter === tag ? null : tag);
+            }
           }
         };
 
