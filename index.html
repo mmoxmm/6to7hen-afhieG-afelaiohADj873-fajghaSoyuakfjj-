@@ -2756,7 +2756,19 @@
             </div>
             <div class="acc-body" id="body-secret-cmd3"
               style="background:var(--bg2);border:0.5px solid var(--border2);border-top:none;border-radius:0 0 var(--radius) var(--radius);padding:6px 8px">
-              <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+              <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px">
+                <div
+                  style="padding:5px 7px;background:var(--bg);border:0.5px solid var(--border);border-radius:var(--radius)">
+                  <label
+                    style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:12px;color:var(--text2);margin-bottom:4px;font-weight:700">
+                    <input type="checkbox" id="chk-fixed-san-stat" checked onchange="syncFixedSanCheck(this)"
+                      style="cursor:pointer;accent-color:var(--accent);width:14px;height:14px">
+                    🎲 固定ロール3行
+                  </label>
+                  <div class="secret-cmd-preview">CC&lt;={SAN} 【正気度ロール】
+CC&lt;={INT} 【アイデア】
+CC&lt;={幸運} 【幸運】</div>
+                </div>
                 <div
                   style="padding:5px 7px;background:var(--bg);border:0.5px solid var(--border);border-radius:var(--radius)">
                   <label
@@ -3524,7 +3536,20 @@
                   </div>
                   <div class="acc-body" id="body-secret-cmd"
                     style="background:var(--bg2);border:0.5px solid var(--border2);border-top:none;border-radius:0 0 var(--radius) var(--radius);padding:6px 8px">
-                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+                    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px">
+                      <!-- 固定ロールプレビュー -->
+                      <div
+                        style="padding:5px 7px;background:var(--bg);border:0.5px solid var(--border);border-radius:var(--radius)">
+                        <label
+                          style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:12px;color:var(--text2);margin-bottom:4px;font-weight:700">
+                          <input type="checkbox" id="chk-fixed-san" checked onchange="syncFixedSanCheck(this)"
+                            style="cursor:pointer;accent-color:var(--accent);width:14px;height:14px">
+                          🎲 固定ロール3行
+                        </label>
+                        <div class="secret-cmd-preview">CC&lt;={SAN} 【正気度ロール】
+CC&lt;={INT} 【アイデア】
+CC&lt;={幸運} 【幸運】</div>
+                      </div>
                       <!-- 特性値プレビュー -->
                       <div
                         style="padding:5px 7px;background:var(--bg);border:0.5px solid var(--border);border-radius:var(--radius)">
@@ -3732,7 +3757,19 @@
                   </div>
                   <div class="acc-body" id="body-secret-cmd2"
                     style="background:var(--bg2);border:0.5px solid var(--border2);border-top:none;border-radius:0 0 var(--radius) var(--radius);padding:6px 8px">
-                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+                    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px">
+                      <div
+                        style="padding:5px 7px;background:var(--bg);border:0.5px solid var(--border);border-radius:var(--radius)">
+                        <label
+                          style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:12px;color:var(--text2);margin-bottom:4px;font-weight:700">
+                          <input type="checkbox" id="chk-fixed-san2" checked onchange="syncFixedSanCheck(this)"
+                            style="cursor:pointer;accent-color:var(--accent);width:14px;height:14px">
+                          🎲 固定ロール3行
+                        </label>
+                        <div class="secret-cmd-preview">CC&lt;={SAN} 【正気度ロール】
+CC&lt;={INT} 【アイデア】
+CC&lt;={幸運} 【幸運】</div>
+                      </div>
                       <div
                         style="padding:5px 7px;background:var(--bg);border:0.5px solid var(--border);border-radius:var(--radius)">
                         <label
@@ -4952,6 +4989,16 @@
       updateExport();
     }
 
+    function syncFixedSanCheck(el) {
+      // 保存データには記録しない、常にデフォルトONのグローバル変数として扱う
+      _fixedSanRolls = el.checked;
+      ["chk-fixed-san-stat", "chk-fixed-san", "chk-fixed-san2"].forEach(id => {
+        const t = document.getElementById(id);
+        if (t) t.checked = el.checked;
+      });
+      updateExport();
+    }
+
     function clearAllKomaLabels() {
       if (!confirm("全ラベルをクリアしますか？")) return;
       currentKoma.labels = [];
@@ -5042,6 +5089,7 @@
     let _hideChatChar = false;
     let _invisible = false;
     let _komaSettings = { hideStatus: false, hideChat: false, invisible: false, skDice: false, inclSep: false, sepSpace: 'before' };
+    let _fixedSanRolls = true; // 固定SAN/INT/幸運ロール（保存データに記録しない・常にデフォルトON）
     const STATS = [{ key: "str", label: "STR", jp: "筋力" }, { key: "con", label: "CON", jp: "体力" }, { key: "siz", label: "SIZ", jp: "体格" }, { key: "int", label: "INT", jp: "知性" }, { key: "pow", label: "POW", jp: "精神力" }, { key: "dex", label: "DEX", jp: "敏捷" }, { key: "app", label: "APP", jp: "外見" }, { key: "edu", label: "EDU", jp: "教育" }];
     const MYTHOS_BEINGS = [{ name: "クトゥルフ（直視）", s: "1", f: "1d10+1" }, { name: "クトゥルフ（知識のみ）", s: "1", f: "6" }, { name: "ハスター", s: "1", f: "6" }, { name: "ナイアルラトホテップ", s: "1", f: "8" }, { name: "シュブ＝ニグラス", s: "1", f: "8" }, { name: "アザトース（遠望）", s: "1", f: "1d6+1" }, { name: "ダゴン", s: "1", f: "6" }, { name: "ディープ・ワン（初遭遇）", s: "0", f: "2" }, { name: "ディープ・ワン（群れ）", s: "1", f: "1d4+1" }, { name: "ショゴス", s: "1", f: "8" }, { name: "ビャーカー", s: "0", f: "1d3+1" }, { name: "ナイトガウント", s: "0", f: "1d4+1" }, { name: "フライング・ポリープ", s: "1", f: "1d6+1" }, { name: "ハウンド・オブ・ティンダロス", s: "1", f: "1d6+1" }, { name: "ミ＝ゴ", s: "0", f: "1d4+1" }, { name: "老いたる者", s: "0", f: "2" }, { name: "グール（初遭遇）", s: "0", f: "1d4" }, { name: "ゾンビ（初遭遇）", s: "0", f: "1d4+1" }, { name: "ゴースト（初遭遇）", s: "1", f: "1d3+1" }, { name: "神話的な儀式（目撃）", s: "1", f: "1d4+2" }, { name: "邪神の書物（初読）", s: "1", f: "4" }, { name: "神話の真実を知った", s: "1", f: "6" }];
     const SPELL_REF = [{ name: "コンタクト・ディープ・ワン", cost: "1MP", san: "0/0", sanF: "0", time: "1時間", desc: "深きものと接触し意思疎通を図る。" }, { name: "コンタクト・クトゥルフ", cost: "10MP", san: "1d6/1d10", sanF: "1d10", time: "1時間以上", desc: "ルルイエにてクトゥルフと接触を試みる。" }, { name: "サモン・ビャーカー", cost: "5MP", san: "0/1d3", sanF: "1d3", time: "1ラウンド", desc: "ビャーカー1体を召喚。" }, { name: "サモン・ナイトガウント", cost: "3MP", san: "0/1d4", sanF: "1d4", time: "1ラウンド", desc: "ナイトガウントを召喚。" }, { name: "クリエイト・ゾンビ", cost: "1MP+1SAN", san: "1/1d3", sanF: "1d3", time: "1時間", desc: "死体をゾンビとして再活性化。" }, { name: "ファイアー", cost: "2MP", san: "0/0", sanF: "0", time: "1ラウンド", desc: "炎の弾。1d6ダメージ。" }, { name: "ウォード", cost: "3MP", san: "0/0", sanF: "0", time: "1時間", desc: "区域を霊的に守護する結界。" }, { name: "エルダー・サイン（刻印）", cost: "5MP", san: "1/1d4", sanF: "1d4", time: "1日", desc: "強力な封印の印を刻む。" }, { name: "精神支配", cost: "5MP", san: "1/1d6", sanF: "1d6", time: "持続", desc: "対象を術者の意のままに操る。" }];
@@ -5084,7 +5132,7 @@
       skEl.innerHTML = "";
       atkEl.innerHTML = "";
 
-      const lines = getPaletteLines(false);
+      const lines = getPaletteLines(false, 'stats');
 
       // どちらのパネルに入れるか判定するため、技能キーか攻撃系キーかで振り分け
       // getPaletteLines は技能・攻撃・呪文・消耗・MEMOを1本のリストで返すので
@@ -6337,7 +6385,38 @@
     let splHeader = "━━━✨呪文━━━";
     let paletteCustomOrder = null;
 
-    function getPaletteLines(forExport = false) {
+    // ===== 区切り設定（🔧）共通読み取り関数 =====
+    // コマ／ステータス／個人保存／共有保存の4タブはそれぞれ独立したラジオボタン
+    // (koma-sep-space / koma-sep-space4 / koma-sep-space2 / koma-sep-space3) を持つ。
+    // 出力ロジックは「どのタブの出力を作っているか」を tabCtx で受け取り、
+    // 必ずこの関数経由で正しいグループの値を読むことで判定ロジックを統一する。
+    function getSepSpaceForTab(tabCtx) {
+      const nameMap = {
+        koma: 'koma-sep-space',
+        personal: 'koma-sep-space2',
+        shared: 'koma-sep-space3',
+        stats: 'koma-sep-space4'
+      };
+      const name = nameMap[tabCtx] || 'koma-sep-space2';
+      return document.querySelector('input[name="' + name + '"]:checked')?.value || 'before';
+    }
+
+    // 現在アクティブな出力タブ（'stats' | 'personal' | 'shared'）を判定
+    function getActiveTabCtx() {
+      const activeTab = [...document.querySelectorAll('.tab[data-tab]')].find(b => b.classList.contains('active'))?.dataset.tab;
+      if (activeTab === 'save') return currentSavePage === 'shared' ? 'shared' : 'personal';
+      if (activeTab === 'stats') return 'stats';
+      return 'personal';
+    }
+
+    // タブ文脈に対応する出力プレビューDOM要素IDを返す
+    function getExportPreviewElId(tabCtx) {
+      if (tabCtx === 'shared') return 'export-preview2';
+      if (tabCtx === 'stats') return 'export-preview3';
+      return 'export-preview';
+    }
+
+    function getPaletteLines(forExport = false, tabCtx = 'personal') {
       const strV = vals.str || 0, sizV = vals.siz || 0;
       const db = (strV + sizV > 0) ? getDB(strV + sizV) : null;
       const gB = document.getElementById("chk-both-db")?.checked || document.getElementById("chk-both-db2")?.checked || false;
@@ -6409,19 +6488,8 @@
       // ヘッダーはブロックに有効なラベルが1つ以上ある場合のみ表示
       const needHeaders = true; // appendBlock内で判定
 
-      // 区切り設定を読む（コマタブと同じ）
-      const sepSpace = document.querySelector(
-        'input[name="koma-sep-space"]:checked, input[name="koma-sep-space2"]:checked, input[name="koma-sep-space3"]:checked'
-      )?.value || 'before';
-
-      // ヘッダー行を生成するヘルパー
-      function makeHeader(text) {
-        const lines = [];
-        lines.push({ text: '', isSep: false, _empty: true });   // 前の空行（常に入れる）
-        lines.push({ text: text, isSep: true, _header: true });
-        if (sepSpace === 'both') lines.push({ text: '', isSep: false, _empty: true });
-        return lines;
-      }
+      // 区切り設定を読む（タブごとに個別管理・共通関数で判定）
+      const sepSpace = getSepSpaceForTab(tabCtx);
 
       // ===== ブロックを順序通りに組み立て =====
       // 順序：技能 → 攻撃 → 呪文 → 消耗品 → MEMO（atkFirstなら攻撃・呪文 → 技能）
@@ -6430,10 +6498,14 @@
       function appendBlock(block, headerText) {
         const hasReal = block.some(l => !l.isSep && !l._empty && !l._spellNote);
         if (!hasReal) return;
-        // 有効な行がある場合のみ、区切り行・ヘッダーも含めてすべて出力
+        // ヘッダー有無に関わらず、内容があるブロックの直前には必ず1行空行を入れる
+        result.push({ text: '', isSep: false, _empty: true });
         if (headerText) {
-          const hdr = makeHeader(headerText);
-          hdr.forEach(l => result.push(l));
+          result.push({ text: headerText, isSep: true, _header: true });
+        }
+        // 設定が「前後」のときだけ、ヘッダー直後にもう1行空行を追加
+        if (sepSpace === 'both') {
+          result.push({ text: '', isSep: false, _empty: true });
         }
         block.forEach(l => {
           if (l.isSep) {
@@ -6475,9 +6547,8 @@
     function resetPaletteOrder() { paletteCustomOrder = null; renderPalettePreview(); showToast("\u4e26\u3073\u9806\u3092\u30ea\u30bb\u30c3\u30c8\u3057\u307e\u3057\u305f"); }
     function copyPalettePreview() { const lines = getPaletteLines(); if (!lines.length) { showToast("\u30c7\u30fc\u30bf\u304c\u3042\u308a\u307e\u305b\u3093"); return; } const txt = lines.filter(l => !l._empty).map(l => l.text).join("\n"); navigator.clipboard.writeText(txt).then(() => showToast("\u30d1\u30ec\u30c3\u30c8\u3092\u30b3\u30d4\u30fc\u3057\u307e\u3057\u305f")).catch(() => showToast("\u30b3\u30d4\u30fc\u5931\u6557")); }
     function copyPaletteBlock(type) {
-      const lines = getPaletteLines(false);
-      const sepSpace = document.querySelector('input[name="koma-sep-space"]:checked')?.value
-        || document.querySelector('input[name="koma-sep-space2"]:checked')?.value || 'before';
+      const lines = getPaletteLines(false, 'stats');
+      const sepSpace = getSepSpaceForTab('stats');
 
       let filtered = [];
       if (type === "atk") {
@@ -6525,10 +6596,9 @@
       const memoOn = document.getElementById('chk-copy-memo')?.checked;
       const atkFirst = document.querySelector('input[name="cmd-order"][value="atk-first"]')?.checked
         || document.querySelector('input[name="cmd-order2"][value="atk-first"]')?.checked || false;
-      const sepSpace = document.querySelector('input[name="koma-sep-space"]:checked')?.value
-        || document.querySelector('input[name="koma-sep-space2"]:checked')?.value || 'before';
+      const sepSpace = getSepSpaceForTab('stats');
 
-      const lines = getPaletteLines(false);
+      const lines = getPaletteLines(false, 'stats');
       // ブロックに分解
       const blocks = { atk: [], sk: [], spl: [], memo: [] };
       let currentBlock = null;
@@ -6650,7 +6720,7 @@
     function syncUseV6Check(el) { ["chk-use-v6", "chk-use-v6-2", "chk-use-v6-3"].forEach(id => { const t = document.getElementById(id); if (t && t !== el) t.checked = el.checked; }); updateExport(); }
     function isUseV6() { return document.getElementById("chk-use-v6")?.checked || document.getElementById("chk-use-v6-2")?.checked || false; }
     function isSkDice() { return document.getElementById("chk-sk-dice")?.checked || document.getElementById("chk-sk-dice-save")?.checked || document.getElementById("chk-sk-dice2")?.checked || false; }
-    function buildCocoforiaJson(includeKoma = false) {
+    function buildCocoforiaJson(includeKoma = false, tabCtx = 'personal') {
       const name = document.getElementById("npc-name").value || "NPC";
       const status = [];
       const hp = getEff("hp"), mp = getEff("mp"), san = getEff("san"), luck = getEff("luck");
@@ -6686,23 +6756,20 @@
 
       let cmdLines = [];
 
-      const sepSpaceMode = document.querySelector('input[name="koma-sep-space"]:checked')?.value
-        || document.querySelector('input[name="koma-sep-space2"]:checked')?.value
-        || document.querySelector('input[name="koma-sep-space3"]:checked')?.value
-        || 'before';
+      const sepSpaceMode = getSepSpaceForTab(tabCtx);
 
       if (!useManualOnly) {
-        const lines = getPaletteLines(true);  // ← true を渡す
+        const lines = getPaletteLines(true, tabCtx);  // ← true を渡す
         lines.forEach((l, idx) => {
           // 空行フラグ（ヘッダー前後の空行）
           if (l._empty) { cmdLines.push(''); return; }
           // 区切り行
           if (l.isSep) {
             if (!l._header) {
-              // 手動区切り：前後に空行
+              // 手動区切り：前に空行（既にある場合は追加しない）。後ろは設定が「前後」のときのみ追加
               if (idx > 0 && cmdLines.length && cmdLines[cmdLines.length - 1] !== '') cmdLines.push('');
               cmdLines.push(l.text || '━━━━━━━━━━');
-              cmdLines.push('');
+              if (sepSpaceMode === 'both') cmdLines.push('');
             } else {
               // 自動ヘッダー：_emptyで制御済みなのでそのまま出力
               cmdLines.push(l.text);
@@ -6750,6 +6817,13 @@
         if (manualPaletteText.trim()) {
           cmdLines = manualPaletteText.split("\n").map(l => l.trimEnd());
         }
+      }
+
+      // 固定SAN/INT/幸運ロール（DB両方出力/6版変換/🎲ダイス表示の影響を受けない完全固定テキスト）
+      // 保存データには記録せず、常にデフォルトONのグローバル変数として扱う。
+      // パレットプレビューには表示せず、最終出力JSON(commands)の先頭にのみ反映する。
+      if (_fixedSanRolls) {
+        cmdLines = ["CC<={SAN} 【正気度ロール】", "CC<={INT} 【アイデア】", "CC<={幸運} 【幸運】", ...cmdLines];
       }
 
       const memoLines = memoList
@@ -6821,7 +6895,7 @@
       if (komaPaletteForExport) {
         cmdLines.push('');
         cmdLines.push('＝＝＝ コマパレット ＝＝＝');
-        cmdLines.push('');
+        if (sepSpaceMode === 'both') cmdLines.push('');
         komaPaletteForExport.split('\n').forEach(l => cmdLines.push(l));
         if (sepSpaceMode === 'both') cmdLines.push('');
       }
@@ -6855,26 +6929,44 @@
       const any = name || STATS.some(s => (vals[s.key] || 0) > 0) || getEff("hp") > 0
         || atkList.some(a => a.name) || skList.some(s => s.name && (s.val || 0) > 0)
         || extraParams.some(p => p.label) || hasKomaData;
-      const activeTab = [...document.querySelectorAll('.tab[data-tab]')].find(b => b.classList.contains('active'))?.dataset.tab;
-      const useKoma = activeTab === 'save';
-      const txt = any ? (exportMode === "json" ? buildCocoforiaJson(useKoma) : buildCocoforiaText()) : "（스테이터스를 입력하면 출력됩니다）";
       const el = document.getElementById("export-preview");
-      if (el) el.textContent = txt;
       const el2 = document.getElementById("export-preview2");
-      if (el2) el2.textContent = txt;
       const el3 = document.getElementById("export-preview3");
-      if (el3) el3.textContent = txt;
+      if (!any) {
+        const emptyTxt = "（스테이터스를 입력하면 출력됩니다）";
+        if (el) el.textContent = emptyTxt;
+        if (el2) el2.textContent = emptyTxt;
+        if (el3) el3.textContent = emptyTxt;
+        updateSecretCmdPreview();
+        clearTimeout(_renderPaletteTimer);
+        _renderPaletteTimer = setTimeout(renderPalettePreview, 80);
+        return;
+      }
+      // 個人保存／共有保存／ステータスタブはそれぞれ自分の区切り設定(🔧)で
+      // 個別に計算する（以前は1回だけ計算した同じ文字列を3箇所に流用していたため、
+      // 結果的に常に同じ区切り設定が使われてしまっていた）
+      if (exportMode === "json") {
+        if (el) el.textContent = buildCocoforiaJson(true, 'personal');
+        if (el2) el2.textContent = buildCocoforiaJson(true, 'shared');
+        if (el3) el3.textContent = buildCocoforiaJson(false, 'stats');
+      } else {
+        const txt = buildCocoforiaText();
+        if (el) el.textContent = txt;
+        if (el2) el2.textContent = txt;
+        if (el3) el3.textContent = txt;
+      }
       updateSecretCmdPreview();
       clearTimeout(_renderPaletteTimer);
       _renderPaletteTimer = setTimeout(renderPalettePreview, 80);
     }
     function copyExport() {
       if (exportMode === "json") {
-        const hasKomaData2 = (currentKoma.labels || []).some(l => !l._sep && l.text) || (currentKoma.statusList || []).some(s => !s._sep && s.label) || (currentKoma.paramList || []).some(p => !p._sep && p.label) || (currentKoma.manualPalette || '').trim(); const any = STATS.some(s => (vals[s.key] || 0) > 0) || getEff("hp") > 0 || atkList.some(a => a.name) || skList.some(s => s.name && (s.val || 0) > 0) || hasKomaData2; if (!any) { showToast("\u30c7\u30fc\u30bf\u304c\u3042\u308a\u307e\u305b\u3093"); return; } const activeTab = [...document.querySelectorAll('.tab[data-tab]')].find(b => b.classList.contains('active'))?.dataset.tab;
-        const useKoma = activeTab === 'save'; const obj = JSON.parse(buildCocoforiaJson(useKoma)); navigator.clipboard.writeText(JSON.stringify(obj)).then(() => showToast("\u30b3\u30d4\u30fc\u3057\u307e\u3057\u305f\uff01")).catch(() => showToast("\u30b3\u30d4\u30fc\u5931\u6557"));
-      } else { const el = document.getElementById("export-preview"); const txt = el?.textContent; if (!txt || txt === "\uff08\u30b9\u30c6\u30fc\u30bf\u30b9\u3092\u5165\u529b\u3059\u308b\u3068\u51fa\u529b\u3055\u308c\u307e\u3059\uff09") { showToast("\u30c7\u30fc\u30bf\u304c\u3042\u308a\u307e\u305b\u3093"); return; } navigator.clipboard.writeText(txt).then(() => showToast("\u30b3\u30d4\u30fc\u3057\u307e\u3057\u305f")).catch(() => showToast("\u30b3\u30d4\u30fc\u5931\u6557")); }
+        const hasKomaData2 = (currentKoma.labels || []).some(l => !l._sep && l.text) || (currentKoma.statusList || []).some(s => !s._sep && s.label) || (currentKoma.paramList || []).some(p => !p._sep && p.label) || (currentKoma.manualPalette || '').trim(); const any = STATS.some(s => (vals[s.key] || 0) > 0) || getEff("hp") > 0 || atkList.some(a => a.name) || skList.some(s => s.name && (s.val || 0) > 0) || hasKomaData2; if (!any) { showToast("\u30c7\u30fc\u30bf\u304c\u3042\u308a\u307e\u305b\u3093"); return; }
+        const tabCtx = getActiveTabCtx();
+        const useKoma = tabCtx !== 'stats'; const obj = JSON.parse(buildCocoforiaJson(useKoma, tabCtx)); navigator.clipboard.writeText(JSON.stringify(obj)).then(() => showToast("\u30b3\u30d4\u30fc\u3057\u307e\u3057\u305f\uff01")).catch(() => showToast("\u30b3\u30d4\u30fc\u5931\u6557"));
+      } else { const tabCtx = getActiveTabCtx(); const el = document.getElementById(getExportPreviewElId(tabCtx)); const txt = el?.textContent; if (!txt || txt === "\uff08\u30b9\u30c6\u30fc\u30bf\u30b9\u3092\u5165\u529b\u3059\u308b\u3068\u51fa\u529b\u3055\u308c\u307e\u3059\uff09") { showToast("\u30c7\u30fc\u30bf\u304c\u3042\u308a\u307e\u305b\u3093"); return; } navigator.clipboard.writeText(txt).then(() => showToast("\u30b3\u30d4\u30fc\u3057\u307e\u3057\u305f")).catch(() => showToast("\u30b3\u30d4\u30fc\u5931\u6557")); }
     }
-    function downloadExport() { const el = document.getElementById("export-preview"); if (!el) return; const txt = el.textContent; if (!txt || txt === "\uff08\u30b9\u30c6\u30fc\u30bf\u30b9\u3092\u5165\u529b\u3059\u308b\u3068\u51fa\u529b\u3055\u308c\u307e\u3059\uff09") { showToast("\u30c7\u30fc\u30bf\u304c\u3042\u308a\u307e\u305b\u3093"); return; } const name = (document.getElementById("npc-name").value || "npc").replace(/[^a-zA-Z0-9\u3000-\u9fff\u30a0-\u30ff\u3041-\u3096]/g, "_"); const blob = new Blob([txt], { type: "application/json" }); const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = name + ".json"; document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(a.href); showToast("\u30c0\u30a6\u30f3\u30ed\u30fc\u30c9\u3057\u307e\u3057\u305f"); }
+    function downloadExport() { const tabCtx = getActiveTabCtx(); const el = document.getElementById(getExportPreviewElId(tabCtx)); if (!el) return; const txt = el.textContent; if (!txt || txt === "\uff08\u30b9\u30c6\u30fc\u30bf\u30b9\u3092\u5165\u529b\u3059\u308b\u3068\u51fa\u529b\u3055\u308c\u307e\u3059\uff09") { showToast("\u30c7\u30fc\u30bf\u304c\u3042\u308a\u307e\u305b\u3093"); return; } const name = (document.getElementById("npc-name").value || "npc").replace(/[^a-zA-Z0-9\u3000-\u9fff\u30a0-\u30ff\u3041-\u3096]/g, "_"); const blob = new Blob([txt], { type: "application/json" }); const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = name + ".json"; document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(a.href); showToast("\u30c0\u30a6\u30f3\u30ed\u30fc\u30c9\u3057\u307e\u3057\u305f"); }
     function renderHpList() { const w = document.getElementById("hp-list"); if (!hpList.length) { w.innerHTML = '<div style="font-size:13px;color:var(--text3);text-align:center;padding:4px">NPC\u3092\u8ffd\u52a0\u3057\u3066\u304f\u3060\u3055\u3044</div>'; return; } w.innerHTML = hpList.map((h, i) => { const p = Math.max(0, h.cur / h.max * 100), c = p > 50 ? "#1a9e72" : p > 25 ? "#d09028" : "#c03030"; return '<div class="hp-item"><span class="hp-name">' + esc(h.name) + '</span><div class="hp-bar-wrap"><div class="hp-bar" style="width:' + p + '%;background:' + c + '"></div></div><span class="hp-nums" style="color:' + c + '">' + h.cur + '/' + h.max + '</span><div class="hp-btns"><button class="hp-btn" data-i="' + i + '" data-d="-1">\u2212</button><button class="hp-btn" data-i="' + i + '" data-d="1">\uff0b</button><button class="hp-btn" data-i="' + i + '" data-d="del" style="color:var(--text3)">\u2715</button></div></div>'; }).join(""); w.querySelectorAll(".hp-btn").forEach(btn => btn.addEventListener("click", e => { const i = +e.currentTarget.dataset.i, d = e.currentTarget.dataset.d; if (d === "del") hpList.splice(i, 1); else hpList[i].cur = Math.max(0, Math.min(hpList[i].max, hpList[i].cur + parseInt(d))); renderHpList(); saveKp(); })); }
     function renderInitList() { const w = document.getElementById("init-list"); if (!initList.length) { w.innerHTML = '<div style="font-size:13px;color:var(--text3);text-align:center;padding:4px">\u53c2\u52a0\u8005\u3092\u8ffd\u52a0\u3057\u3066\u304f\u3060\u3055\u3044</div>'; return; } w.innerHTML = initList.map((it, i) => '<div class="init-item' + (i === initTurn ? " active" : "") + '"><span class="init-val">' + it.dex + '</span><span class="init-name">' + esc(it.name) + (i === initTurn ? " \u25c4" : "") + '</span><button class="init-del" data-i="' + i + '">\u2715</button></div>').join(""); w.querySelectorAll(".init-del").forEach(btn => btn.addEventListener("click", e => { const i = +e.currentTarget.dataset.i; initList.splice(i, 1); if (initTurn >= initList.length) initTurn = 0; renderInitList(); saveKp(); })); }
     function saveKp() { localStorage.setItem("coc_kp_hp", JSON.stringify(hpList)); localStorage.setItem("coc_kp_init", JSON.stringify({ list: initList, turn: initTurn })); }
