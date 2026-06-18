@@ -2790,6 +2790,18 @@ CC&lt;={幸運} 【幸運】</div>
                   <div class="secret-cmd-preview" id="secret-cmd-preview3">（チェックをONにすると表示）</div>
                 </div>
               </div>
+              <div style="margin-top:6px;display:flex;gap:14px;flex-wrap:wrap;padding:5px 7px;background:var(--bg);border:0.5px solid var(--border);border-radius:var(--radius)">
+                <label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:12px;color:var(--text2);font-weight:700">
+                  <input type="checkbox" id="chk-strip-emoji-stat" checked onchange="syncStripEmojiCheck(this)"
+                    style="cursor:pointer;accent-color:var(--accent);width:14px;height:14px">
+                  ✂️ 名前から絵文字を除去
+                </label>
+                <label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:12px;color:var(--text2);font-weight:700">
+                  <input type="checkbox" id="chk-strip-memo-stat" checked onchange="syncStripMemoCheck(this)"
+                    style="cursor:pointer;accent-color:var(--accent);width:14px;height:14px">
+                  🧹 MEMO末尾の空行を除去
+                </label>
+              </div>
             </div>
           </div>
           <div class="export-preview" id="export-preview3" onclick="copyExport()" title="タップでコピー">（ステータスを入力すると出力されます）
@@ -3573,6 +3585,18 @@ CC&lt;={幸運} 【幸運】</div>
                         <div class="secret-cmd-preview" id="secret-cmd-preview">（チェックをONにすると表示）</div>
                       </div>
                     </div>
+                    <div style="margin-top:6px;display:flex;gap:14px;flex-wrap:wrap;padding:5px 7px;background:var(--bg);border:0.5px solid var(--border);border-radius:var(--radius)">
+                      <label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:12px;color:var(--text2);font-weight:700">
+                        <input type="checkbox" id="chk-strip-emoji" checked onchange="syncStripEmojiCheck(this)"
+                          style="cursor:pointer;accent-color:var(--accent);width:14px;height:14px">
+                        ✂️ 名前から絵文字を除去
+                      </label>
+                      <label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:12px;color:var(--text2);font-weight:700">
+                        <input type="checkbox" id="chk-strip-memo" checked onchange="syncStripMemoCheck(this)"
+                          style="cursor:pointer;accent-color:var(--accent);width:14px;height:14px">
+                        🧹 MEMO末尾の空行を除去
+                      </label>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -3790,6 +3814,18 @@ CC&lt;={幸運} 【幸運】</div>
                         </label>
                         <div class="secret-cmd-preview" id="secret-cmd-preview2">（チェックをONにすると表示）</div>
                       </div>
+                    </div>
+                    <div style="margin-top:6px;display:flex;gap:14px;flex-wrap:wrap;padding:5px 7px;background:var(--bg);border:0.5px solid var(--border);border-radius:var(--radius)">
+                      <label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:12px;color:var(--text2);font-weight:700">
+                        <input type="checkbox" id="chk-strip-emoji2" checked onchange="syncStripEmojiCheck(this)"
+                          style="cursor:pointer;accent-color:var(--accent);width:14px;height:14px">
+                        ✂️ 名前から絵文字を除去
+                      </label>
+                      <label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:12px;color:var(--text2);font-weight:700">
+                        <input type="checkbox" id="chk-strip-memo2" checked onchange="syncStripMemoCheck(this)"
+                          style="cursor:pointer;accent-color:var(--accent);width:14px;height:14px">
+                        🧹 MEMO末尾の空行を除去
+                      </label>
                     </div>
                   </div>
                 </div>
@@ -4999,6 +5035,50 @@ CC&lt;={幸運} 【幸運】</div>
       updateExport();
     }
 
+    // ===== FIX3A: ✂️ 名前から絵文字を除去 =====
+    function stripEmoji(str) {
+      if (!str) return str;
+      return str
+        .replace(/[\u{1F1E6}-\u{1F1FF}\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{2B00}-\u{2BFF}\u{2300}-\u{23FF}\u{FE0F}\u{200D}\u{20E3}]/gu, '')
+        .replace(/ {2,}/g, ' ')
+        .trim();
+    }
+    function isStripEmojiOn() {
+      return document.getElementById("chk-strip-emoji-stat")?.checked
+        ?? document.getElementById("chk-strip-emoji")?.checked
+        ?? document.getElementById("chk-strip-emoji2")?.checked
+        ?? true;
+    }
+    function syncStripEmojiCheck(el) {
+      _stripEmoji = el.checked;
+      ["chk-strip-emoji-stat", "chk-strip-emoji", "chk-strip-emoji2"].forEach(id => {
+        const t = document.getElementById(id);
+        if (t) t.checked = el.checked;
+      });
+      updateExport();
+    }
+
+    // ===== FIX3B: 🧹 MEMO末尾の空行を除去 =====
+    function isStripMemoOn() {
+      return document.getElementById("chk-strip-memo-stat")?.checked
+        ?? document.getElementById("chk-strip-memo")?.checked
+        ?? document.getElementById("chk-strip-memo2")?.checked
+        ?? true;
+    }
+    function stripMemoTrailingLines(content) {
+      const lines = (content || '').split('\n');
+      while (lines.length && lines[lines.length - 1].trim() === '') lines.pop();
+      return lines;
+    }
+    function syncStripMemoCheck(el) {
+      _stripMemoTrailingNewlines = el.checked;
+      ["chk-strip-memo-stat", "chk-strip-memo", "chk-strip-memo2"].forEach(id => {
+        const t = document.getElementById(id);
+        if (t) t.checked = el.checked;
+      });
+      updateExport();
+    }
+
     function clearAllKomaLabels() {
       if (!confirm("全ラベルをクリアしますか？")) return;
       currentKoma.labels = [];
@@ -5009,7 +5089,8 @@ CC&lt;={幸運} 【幸運】</div>
     }
 
     function getSecretCmdLines() {
-      const name = document.getElementById("npc-name")?.value || "{名前}";
+      const _rawName2 = document.getElementById("npc-name")?.value || "{名前}";
+      const name = isStripEmojiOn() ? (stripEmoji(_rawName2) || _rawName2) : _rawName2;
       return [
         "[ " + name + " ] HP : n → n",
         "[ " + name + " ] MP : n → n",
@@ -5090,6 +5171,8 @@ CC&lt;={幸運} 【幸運】</div>
     let _invisible = false;
     let _komaSettings = { hideStatus: false, hideChat: false, invisible: false, skDice: false, inclSep: false, sepSpace: 'before' };
     let _fixedSanRolls = true; // 固定SAN/INT/幸運ロール（保存データに記録しない・常にデフォルトON）
+    let _stripEmoji = true;   // 名前から絵文字を除去
+    let _stripMemoTrailingNewlines = true; // MEMO末尾空行を除去
     const STATS = [{ key: "str", label: "STR", jp: "筋力" }, { key: "con", label: "CON", jp: "体力" }, { key: "siz", label: "SIZ", jp: "体格" }, { key: "int", label: "INT", jp: "知性" }, { key: "pow", label: "POW", jp: "精神力" }, { key: "dex", label: "DEX", jp: "敏捷" }, { key: "app", label: "APP", jp: "外見" }, { key: "edu", label: "EDU", jp: "教育" }];
     const MYTHOS_BEINGS = [{ name: "クトゥルフ（直視）", s: "1", f: "1d10+1" }, { name: "クトゥルフ（知識のみ）", s: "1", f: "6" }, { name: "ハスター", s: "1", f: "6" }, { name: "ナイアルラトホテップ", s: "1", f: "8" }, { name: "シュブ＝ニグラス", s: "1", f: "8" }, { name: "アザトース（遠望）", s: "1", f: "1d6+1" }, { name: "ダゴン", s: "1", f: "6" }, { name: "ディープ・ワン（初遭遇）", s: "0", f: "2" }, { name: "ディープ・ワン（群れ）", s: "1", f: "1d4+1" }, { name: "ショゴス", s: "1", f: "8" }, { name: "ビャーカー", s: "0", f: "1d3+1" }, { name: "ナイトガウント", s: "0", f: "1d4+1" }, { name: "フライング・ポリープ", s: "1", f: "1d6+1" }, { name: "ハウンド・オブ・ティンダロス", s: "1", f: "1d6+1" }, { name: "ミ＝ゴ", s: "0", f: "1d4+1" }, { name: "老いたる者", s: "0", f: "2" }, { name: "グール（初遭遇）", s: "0", f: "1d4" }, { name: "ゾンビ（初遭遇）", s: "0", f: "1d4+1" }, { name: "ゴースト（初遭遇）", s: "1", f: "1d3+1" }, { name: "神話的な儀式（目撃）", s: "1", f: "1d4+2" }, { name: "邪神の書物（初読）", s: "1", f: "4" }, { name: "神話の真実を知った", s: "1", f: "6" }];
     const SPELL_REF = [{ name: "コンタクト・ディープ・ワン", cost: "1MP", san: "0/0", sanF: "0", time: "1時間", desc: "深きものと接触し意思疎通を図る。" }, { name: "コンタクト・クトゥルフ", cost: "10MP", san: "1d6/1d10", sanF: "1d10", time: "1時間以上", desc: "ルルイエにてクトゥルフと接触を試みる。" }, { name: "サモン・ビャーカー", cost: "5MP", san: "0/1d3", sanF: "1d3", time: "1ラウンド", desc: "ビャーカー1体を召喚。" }, { name: "サモン・ナイトガウント", cost: "3MP", san: "0/1d4", sanF: "1d4", time: "1ラウンド", desc: "ナイトガウントを召喚。" }, { name: "クリエイト・ゾンビ", cost: "1MP+1SAN", san: "1/1d3", sanF: "1d3", time: "1時間", desc: "死体をゾンビとして再活性化。" }, { name: "ファイアー", cost: "2MP", san: "0/0", sanF: "0", time: "1ラウンド", desc: "炎の弾。1d6ダメージ。" }, { name: "ウォード", cost: "3MP", san: "0/0", sanF: "0", time: "1時間", desc: "区域を霊的に守護する結界。" }, { name: "エルダー・サイン（刻印）", cost: "5MP", san: "1/1d4", sanF: "1d4", time: "1日", desc: "強力な封印の印を刻む。" }, { name: "精神支配", cost: "5MP", san: "1/1d6", sanF: "1d6", time: "持続", desc: "対象を術者の意のままに操る。" }];
@@ -6465,9 +6548,11 @@ CC&lt;={幸運} 【幸運】</div>
       // 「パレ」(cmd) のみ。並び順はmemoList準拠。
       const memoBlock = [];
       const memoFiltered = memoList.filter(m => m.content && (m.dest === "cmd" || m.dest === "both"));
+      const _stripMemoOnPreview = isStripMemoOn();
       memoFiltered.forEach((m, mi) => {
         if (mi > 0) memoBlock.push({ text: '', key: 'memo_div_' + m.id, _memoDivider: true });
-        m.content.split('\n').forEach((line, li) => {
+        const _memoContentLines = _stripMemoOnPreview ? stripMemoTrailingLines(m.content) : m.content.split('\n');
+        _memoContentLines.forEach((line, li) => {
           memoBlock.push({ text: line, key: 'memo_' + m.id + '_' + li, _memoLine: true, _memoFirst: li === 0 });
         });
       });
@@ -6507,9 +6592,13 @@ CC&lt;={幸運} 【幸運】</div>
         if (sepSpace === 'both') {
           result.push({ text: '', isSep: false, _empty: true });
         }
-        block.forEach(l => {
+        block.forEach((l, _li) => {
           if (l.isSep) {
+            // FIX5: パレットプレビュー表示時のみ、🔧区切り設定(before/both)に連動して空行を入れる
+            // (forExport=trueのJSON出力経路は buildCocoforiaJson 側で別途正しく処理済みのため対象外)
+            if (!forExport && _li > 0) result.push({ text: '', isSep: false, _empty: true });
             result.push(l); // 区切り行は無条件で出力
+            if (!forExport && sepSpace === 'both') result.push({ text: '', isSep: false, _empty: true });
           } else if (!l._empty && !l._spellNote) {
             result.push(l);
           } else if (l._spellNote) {
@@ -6721,7 +6810,8 @@ CC&lt;={幸運} 【幸運】</div>
     function isUseV6() { return document.getElementById("chk-use-v6")?.checked || document.getElementById("chk-use-v6-2")?.checked || false; }
     function isSkDice() { return document.getElementById("chk-sk-dice")?.checked || document.getElementById("chk-sk-dice-save")?.checked || document.getElementById("chk-sk-dice2")?.checked || false; }
     function buildCocoforiaJson(includeKoma = false, tabCtx = 'personal') {
-      const name = document.getElementById("npc-name").value || "NPC";
+      const _rawName = document.getElementById("npc-name").value || "NPC";
+      const name = isStripEmojiOn() ? (stripEmoji(_rawName) || _rawName) : _rawName;
       const status = [];
       const hp = getEff("hp"), mp = getEff("mp"), san = getEff("san"), luck = getEff("luck");
       if (hp > 0) status.push({ label: "HP", value: hp, max: hp });
@@ -6823,12 +6913,13 @@ CC&lt;={幸運} 【幸運】</div>
       // 保存データには記録せず、常にデフォルトONのグローバル変数として扱う。
       // パレットプレビューには表示せず、最終出力JSON(commands)の先頭にのみ反映する。
       if (_fixedSanRolls) {
-        cmdLines = ["CC<={SAN} 【正気度ロール】", "CC<={INT} 【アイデア】", "CC<={幸運} 【幸運】", ...cmdLines];
+        cmdLines = ["CC<={SAN} 【正気度ロール】", "CC<={INT} 【アイデア】", "CC<={幸運} 【幸運】", "", ...cmdLines];
       }
 
+      const _stripMemoOnExport = isStripMemoOn();
       const memoLines = memoList
         .filter(m => m.content && (m.dest === "memo" || m.dest === "both"))
-        .flatMap(m => m.content.split('\n'));
+        .flatMap(m => _stripMemoOnExport ? stripMemoTrailingLines(m.content) : m.content.split('\n'));
       // 秘匿タブ向けコマンド
       const addSecretCmd = document.getElementById("chk-secret-cmd")?.checked || false;
       if (addSecretCmd) {
