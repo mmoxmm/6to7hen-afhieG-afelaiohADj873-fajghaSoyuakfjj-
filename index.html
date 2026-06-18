@@ -2758,16 +2758,32 @@
               style="background:var(--bg2);border:0.5px solid var(--border2);border-top:none;border-radius:0 0 var(--radius) var(--radius);padding:6px 8px">
               <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px">
                 <div
-                  style="padding:5px 7px;background:var(--bg);border:0.5px solid var(--border);border-radius:var(--radius)">
-                  <label
-                    style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:12px;color:var(--text2);margin-bottom:4px;font-weight:700">
-                    <input type="checkbox" id="chk-fixed-san-stat" checked onchange="syncFixedSanCheck(this)"
-                      style="cursor:pointer;accent-color:var(--accent);width:14px;height:14px">
-                    🎲 固定ロール3行
-                  </label>
-                  <div class="secret-cmd-preview">CC&lt;={SAN} 【正気度ロール】
+                  style="padding:5px 7px;background:var(--bg);border:0.5px solid var(--border);border-radius:var(--radius);display:flex;flex-direction:column">
+                  <div>
+                    <label
+                      style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:12px;color:var(--text2);margin-bottom:4px;font-weight:700">
+                      <input type="checkbox" id="chk-fixed-san-stat" checked onchange="syncFixedSanCheck(this)"
+                        style="cursor:pointer;accent-color:var(--accent);width:14px;height:14px">
+                      🎲 固定ロール3行
+                    </label>
+                    <div class="secret-cmd-preview">CC&lt;={SAN} 【正気度ロール】
 CC&lt;={INT} 【アイデア】
 CC&lt;={幸運} 【幸運】</div>
+                  </div>
+                  <div style="margin-top:6px;padding-top:6px;border-top:0.5px dashed var(--border2);flex:1;display:flex;flex-direction:column;justify-content:center">
+                    <label
+                      style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:12px;color:var(--text2);margin-bottom:4px;font-weight:700">
+                      <input type="checkbox" id="chk-strip-emoji-stat" checked onchange="syncStripEmojiCheck(this)"
+                        style="cursor:pointer;accent-color:var(--accent);width:14px;height:14px">
+                      ✂️ 名前から絵文字を除去
+                    </label>
+                    <label
+                      style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:12px;color:var(--text2);font-weight:700">
+                      <input type="checkbox" id="chk-strip-memo-stat" checked onchange="syncStripMemoCheck(this)"
+                        style="cursor:pointer;accent-color:var(--accent);width:14px;height:14px">
+                      🧹 MEMO末尾の空行を除去
+                    </label>
+                  </div>
                 </div>
                 <div
                   style="padding:5px 7px;background:var(--bg);border:0.5px solid var(--border);border-radius:var(--radius)">
@@ -2789,18 +2805,6 @@ CC&lt;={幸運} 【幸運】</div>
                   </label>
                   <div class="secret-cmd-preview" id="secret-cmd-preview3">（チェックをONにすると表示）</div>
                 </div>
-              </div>
-              <div style="margin-top:6px;display:flex;gap:14px;flex-wrap:wrap;padding:5px 7px;background:var(--bg);border:0.5px solid var(--border);border-radius:var(--radius)">
-                <label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:12px;color:var(--text2);font-weight:700">
-                  <input type="checkbox" id="chk-strip-emoji-stat" checked onchange="syncStripEmojiCheck(this)"
-                    style="cursor:pointer;accent-color:var(--accent);width:14px;height:14px">
-                  ✂️ 名前から絵文字を除去
-                </label>
-                <label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:12px;color:var(--text2);font-weight:700">
-                  <input type="checkbox" id="chk-strip-memo-stat" checked onchange="syncStripMemoCheck(this)"
-                    style="cursor:pointer;accent-color:var(--accent);width:14px;height:14px">
-                  🧹 MEMO末尾の空行を除去
-                </label>
               </div>
             </div>
           </div>
@@ -3551,16 +3555,32 @@ CC&lt;={幸運} 【幸運】</div>
                     <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px">
                       <!-- 固定ロールプレビュー -->
                       <div
-                        style="padding:5px 7px;background:var(--bg);border:0.5px solid var(--border);border-radius:var(--radius)">
-                        <label
-                          style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:12px;color:var(--text2);margin-bottom:4px;font-weight:700">
-                          <input type="checkbox" id="chk-fixed-san" checked onchange="syncFixedSanCheck(this)"
-                            style="cursor:pointer;accent-color:var(--accent);width:14px;height:14px">
-                          🎲 固定ロール3行
-                        </label>
-                        <div class="secret-cmd-preview">CC&lt;={SAN} 【正気度ロール】
+                        style="padding:5px 7px;background:var(--bg);border:0.5px solid var(--border);border-radius:var(--radius);display:flex;flex-direction:column">
+                        <div>
+                          <label
+                            style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:12px;color:var(--text2);margin-bottom:4px;font-weight:700">
+                            <input type="checkbox" id="chk-fixed-san" checked onchange="syncFixedSanCheck(this)"
+                              style="cursor:pointer;accent-color:var(--accent);width:14px;height:14px">
+                            🎲 固定ロール3行
+                          </label>
+                          <div class="secret-cmd-preview">CC&lt;={SAN} 【正気度ロール】
 CC&lt;={INT} 【アイデア】
 CC&lt;={幸運} 【幸運】</div>
+                        </div>
+                        <div style="margin-top:6px;padding-top:6px;border-top:0.5px dashed var(--border2);flex:1;display:flex;flex-direction:column;justify-content:center">
+                          <label
+                            style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:12px;color:var(--text2);margin-bottom:4px;font-weight:700">
+                            <input type="checkbox" id="chk-strip-emoji" checked onchange="syncStripEmojiCheck(this)"
+                              style="cursor:pointer;accent-color:var(--accent);width:14px;height:14px">
+                            ✂️ 名前から絵文字を除去
+                          </label>
+                          <label
+                            style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:12px;color:var(--text2);font-weight:700">
+                            <input type="checkbox" id="chk-strip-memo" checked onchange="syncStripMemoCheck(this)"
+                              style="cursor:pointer;accent-color:var(--accent);width:14px;height:14px">
+                            🧹 MEMO末尾の空行を除去
+                          </label>
+                        </div>
                       </div>
                       <!-- 特性値プレビュー -->
                       <div
@@ -3584,18 +3604,6 @@ CC&lt;={幸運} 【幸運】</div>
                         </label>
                         <div class="secret-cmd-preview" id="secret-cmd-preview">（チェックをONにすると表示）</div>
                       </div>
-                    </div>
-                    <div style="margin-top:6px;display:flex;gap:14px;flex-wrap:wrap;padding:5px 7px;background:var(--bg);border:0.5px solid var(--border);border-radius:var(--radius)">
-                      <label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:12px;color:var(--text2);font-weight:700">
-                        <input type="checkbox" id="chk-strip-emoji" checked onchange="syncStripEmojiCheck(this)"
-                          style="cursor:pointer;accent-color:var(--accent);width:14px;height:14px">
-                        ✂️ 名前から絵文字を除去
-                      </label>
-                      <label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:12px;color:var(--text2);font-weight:700">
-                        <input type="checkbox" id="chk-strip-memo" checked onchange="syncStripMemoCheck(this)"
-                          style="cursor:pointer;accent-color:var(--accent);width:14px;height:14px">
-                        🧹 MEMO末尾の空行を除去
-                      </label>
                     </div>
                   </div>
                 </div>
@@ -3783,16 +3791,32 @@ CC&lt;={幸運} 【幸運】</div>
                     style="background:var(--bg2);border:0.5px solid var(--border2);border-top:none;border-radius:0 0 var(--radius) var(--radius);padding:6px 8px">
                     <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px">
                       <div
-                        style="padding:5px 7px;background:var(--bg);border:0.5px solid var(--border);border-radius:var(--radius)">
-                        <label
-                          style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:12px;color:var(--text2);margin-bottom:4px;font-weight:700">
-                          <input type="checkbox" id="chk-fixed-san2" checked onchange="syncFixedSanCheck(this)"
-                            style="cursor:pointer;accent-color:var(--accent);width:14px;height:14px">
-                          🎲 固定ロール3行
-                        </label>
-                        <div class="secret-cmd-preview">CC&lt;={SAN} 【正気度ロール】
+                        style="padding:5px 7px;background:var(--bg);border:0.5px solid var(--border);border-radius:var(--radius);display:flex;flex-direction:column">
+                        <div>
+                          <label
+                            style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:12px;color:var(--text2);margin-bottom:4px;font-weight:700">
+                            <input type="checkbox" id="chk-fixed-san2" checked onchange="syncFixedSanCheck(this)"
+                              style="cursor:pointer;accent-color:var(--accent);width:14px;height:14px">
+                            🎲 固定ロール3行
+                          </label>
+                          <div class="secret-cmd-preview">CC&lt;={SAN} 【正気度ロール】
 CC&lt;={INT} 【アイデア】
 CC&lt;={幸運} 【幸運】</div>
+                        </div>
+                        <div style="margin-top:6px;padding-top:6px;border-top:0.5px dashed var(--border2);flex:1;display:flex;flex-direction:column;justify-content:center">
+                          <label
+                            style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:12px;color:var(--text2);margin-bottom:4px;font-weight:700">
+                            <input type="checkbox" id="chk-strip-emoji2" checked onchange="syncStripEmojiCheck(this)"
+                              style="cursor:pointer;accent-color:var(--accent);width:14px;height:14px">
+                            ✂️ 名前から絵文字を除去
+                          </label>
+                          <label
+                            style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:12px;color:var(--text2);font-weight:700">
+                            <input type="checkbox" id="chk-strip-memo2" checked onchange="syncStripMemoCheck(this)"
+                              style="cursor:pointer;accent-color:var(--accent);width:14px;height:14px">
+                            🧹 MEMO末尾の空行を除去
+                          </label>
+                        </div>
                       </div>
                       <div
                         style="padding:5px 7px;background:var(--bg);border:0.5px solid var(--border);border-radius:var(--radius)">
@@ -3814,18 +3838,6 @@ CC&lt;={幸運} 【幸運】</div>
                         </label>
                         <div class="secret-cmd-preview" id="secret-cmd-preview2">（チェックをONにすると表示）</div>
                       </div>
-                    </div>
-                    <div style="margin-top:6px;display:flex;gap:14px;flex-wrap:wrap;padding:5px 7px;background:var(--bg);border:0.5px solid var(--border);border-radius:var(--radius)">
-                      <label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:12px;color:var(--text2);font-weight:700">
-                        <input type="checkbox" id="chk-strip-emoji2" checked onchange="syncStripEmojiCheck(this)"
-                          style="cursor:pointer;accent-color:var(--accent);width:14px;height:14px">
-                        ✂️ 名前から絵文字を除去
-                      </label>
-                      <label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:12px;color:var(--text2);font-weight:700">
-                        <input type="checkbox" id="chk-strip-memo2" checked onchange="syncStripMemoCheck(this)"
-                          style="cursor:pointer;accent-color:var(--accent);width:14px;height:14px">
-                        🧹 MEMO末尾の空行を除去
-                      </label>
                     </div>
                   </div>
                 </div>
