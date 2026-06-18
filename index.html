@@ -5244,8 +5244,8 @@ CC&lt;={幸運} 【幸運】</div>
       const atkLines = [];
 
       // ヘッダーなし（技能か攻撃どちらか一方のみ）の場合の振り分け
-      const hasSkHeader = lines.some(l => l._header && l.text === '━━━🎯技能━━━');
-      const hasAtkHeader = lines.some(l => l._header && (l.text === '━━━⚔️攻撃━━━' || l.text === '━━━✨呪文━━━'));
+      const hasSkHeader = lines.some(l => l._header && l.text === '━━━━━🎯技能━━━━━');
+      const hasAtkHeader = lines.some(l => l._header && (l.text === '━━━━━⚔️攻撃━━━━━' || l.text === '━━━━━✨呪文━━━━━'));
 
       // ヘッダーが一切ない場合：キーで判断して振り分け
       if (!hasSkHeader && !hasAtkHeader) {
@@ -5757,7 +5757,7 @@ CC&lt;={幸運} 【幸運】</div>
       atkHdrRow.style.cssText = "display:flex;align-items:center;gap:3px;margin-bottom:5px;";
       const atkHdrInp = document.createElement("input");
       atkHdrInp.type = "text";
-      atkHdrInp.placeholder = "━━━⚔️攻撃━━━";
+      atkHdrInp.placeholder = "━━━━━⚔️攻撃━━━━━";
       atkHdrInp.value = atkHeader;
       atkHdrInp.className = "koma-sep-inp";
       atkHdrInp.style.cssText = atkHdrInp.style.cssText + "color:var(--accent);font-weight:700;";
@@ -5770,7 +5770,7 @@ CC&lt;={幸運} 【幸運】</div>
       atkHdrReset.className = "btn-remove";
       atkHdrReset.textContent = "🔄";
       atkHdrReset.title = "初期値に戻す";
-      atkHdrReset.addEventListener("click", () => { atkHeader = "━━━⚔️攻撃━━━"; atkHdrInp.value = atkHeader; updateExport(); renderPalettePreview(); });
+      atkHdrReset.addEventListener("click", () => { atkHeader = "━━━━━⚔️攻撃━━━━━"; atkHdrInp.value = atkHeader; updateExport(); renderPalettePreview(); });
       atkHdrInp.addEventListener("input", e => { atkHeader = e.target.value; updateExport(); renderPalettePreview(); });
       atkHdrRow.append(atkHdrInp, atkHdrReset, atkHdrClr);
       wrap.appendChild(atkHdrRow);
@@ -5894,7 +5894,7 @@ CC&lt;={幸運} 【幸運】</div>
       skHdrRow.style.cssText = "display:flex;align-items:center;gap:3px;margin-bottom:5px;";
       const skHdrInp = document.createElement("input");
       skHdrInp.type = "text";
-      skHdrInp.placeholder = "━━━🎯技能━━━";
+      skHdrInp.placeholder = "━━━━━🎯技能━━━━━";
       skHdrInp.value = skHeader;
       skHdrInp.className = "koma-sep-inp";
       skHdrInp.style.cssText = skHdrInp.style.cssText + "color:var(--accent);font-weight:700;";
@@ -5907,7 +5907,7 @@ CC&lt;={幸運} 【幸運】</div>
       skHdrReset.className = "btn-remove";
       skHdrReset.textContent = "🔄";
       skHdrReset.title = "初期値に戻す";
-      skHdrReset.addEventListener("click", () => { skHeader = "━━━🎯技能━━━"; skHdrInp.value = skHeader; updateExport(); renderPalettePreview(); });
+      skHdrReset.addEventListener("click", () => { skHeader = "━━━━━🎯技能━━━━━"; skHdrInp.value = skHeader; updateExport(); renderPalettePreview(); });
       skHdrInp.addEventListener("input", e => { skHeader = e.target.value; updateExport(); renderPalettePreview(); });
       skHdrRow.append(skHdrInp, skHdrReset, skHdrClr);
       wrap.appendChild(skHdrRow); skList.forEach((sk, idx) => {
@@ -5977,7 +5977,7 @@ CC&lt;={幸運} 【幸運】</div>
       splHdrRow.style.cssText = "display:flex;align-items:center;gap:3px;margin-bottom:5px;";
       const splHdrInp = document.createElement("input");
       splHdrInp.type = "text";
-      splHdrInp.placeholder = "━━━✨呪文━━━";
+      splHdrInp.placeholder = "━━━━━✨呪文━━━━━";
       splHdrInp.value = splHeader;
       splHdrInp.className = "koma-sep-inp";
       splHdrInp.style.cssText = splHdrInp.style.cssText + "color:var(--accent);font-weight:700;";
@@ -5990,7 +5990,7 @@ CC&lt;={幸運} 【幸運】</div>
       splHdrReset.className = "btn-remove";
       splHdrReset.textContent = "🔄";
       splHdrReset.title = "初期値に戻す";
-      splHdrReset.addEventListener("click", () => { splHeader = "━━━✨呪文━━━"; splHdrInp.value = splHeader; updateExport(); renderPalettePreview(); });
+      splHdrReset.addEventListener("click", () => { splHeader = "━━━━━✨呪文━━━━━"; splHdrInp.value = splHeader; updateExport(); renderPalettePreview(); });
       splHdrInp.addEventListener("input", e => { splHeader = e.target.value; updateExport(); renderPalettePreview(); });
       splHdrRow.append(splHdrInp, splHdrReset, splHdrClr);
       wrap.appendChild(splHdrRow); splList.forEach((s, idx) => {
@@ -6141,9 +6141,9 @@ CC&lt;={幸運} 【幸運】</div>
       skList = [{ id: 0, name: "", val: 0 }];
       atkList = [{ id: 0, name: "", pct: 0, dmg: "", note: "", useDB: false }];
       splList = [{ id: 0, name: "", mp: "", note: "" }];
-      atkHeader = "━━━⚔️攻撃━━━";
-      skHeader = "━━━🎯技能━━━";
-      splHeader = "━━━✨呪文━━━";
+      atkHeader = "━━━━━⚔️攻撃━━━━━";
+      skHeader = "━━━━━🎯技能━━━━━";
+      splHeader = "━━━━━✨呪文━━━━━";
       memoList = [{ id: 0, label: "", content: "", dest: "cmd" }];
       saveMemoLocal();
       consumables = [{ id: 0, label: '', cur: '', max: '' }]; nxtId = 1;
@@ -6475,9 +6475,9 @@ CC&lt;={幸運} 【幸運】</div>
       updKomaTabBadges();
     }
 
-    let atkHeader = "━━━⚔️攻撃━━━";
-    let skHeader = "━━━🎯技能━━━";
-    let splHeader = "━━━✨呪文━━━";
+    let atkHeader = "━━━━━⚔️攻撃━━━━━";
+    let skHeader = "━━━━━🎯技能━━━━━";
+    let splHeader = "━━━━━✨呪文━━━━━";
     let paletteCustomOrder = null;
 
     // ===== 区切り設定（🔧）共通読み取り関数 =====
