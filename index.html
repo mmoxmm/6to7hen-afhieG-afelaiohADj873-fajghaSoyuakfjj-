@@ -6902,7 +6902,7 @@ CC&lt;={幸運} 【幸運】</div>
           });
           if (statVarLines.length) {
             if (sepSpaceMode === 'both' || sepSpaceMode === 'before') cmdLines.push('');
-            cmdLines.push("＝＝＝ ステータス ＝＝＝");
+            cmdLines.push("━━━ステータス━━━");
             if (sepSpaceMode === 'both') cmdLines.push('');
             statVarLines.forEach(l => cmdLines.push(l));
             if (sepSpaceMode === 'both') cmdLines.push('');
@@ -6936,7 +6936,7 @@ CC&lt;={幸運} 【幸運】</div>
       const addSecretCmd = document.getElementById("chk-secret-cmd")?.checked || false;
       if (addSecretCmd) {
         if (sepSpaceMode === 'both' || sepSpaceMode === 'before') cmdLines.push("");
-        cmdLines.push("＝＝＝ 秘匿管理 ＝＝＝");
+        cmdLines.push("━━━秘匿管理━━━");
         if (sepSpaceMode === 'both') cmdLines.push('');
         getSecretCmdLines().forEach(l => cmdLines.push(l));
         if (sepSpaceMode === 'both') cmdLines.push("");
