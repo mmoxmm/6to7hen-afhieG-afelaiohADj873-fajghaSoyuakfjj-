@@ -2766,7 +2766,7 @@
                         style="cursor:pointer;accent-color:var(--accent);width:14px;height:14px">
                       🎲 固定ロール3行
                     </label>
-                    <div class="secret-cmd-preview">CC&lt;={SAN} 【正気度ロール】
+                    <div class="secret-cmd-preview" id="fixed-roll-preview3">CC&lt;={SAN} 【正気度ロール】
 CC&lt;={INT} 【アイデア】
 CC&lt;={幸運} 【幸運】</div>
                   </div>
@@ -3578,7 +3578,7 @@ CC&lt;={幸運} 【幸運】</div>
                               style="cursor:pointer;accent-color:var(--accent);width:14px;height:14px">
                             🎲 固定ロール3行
                           </label>
-                          <div class="secret-cmd-preview">CC&lt;={SAN} 【正気度ロール】
+                          <div class="secret-cmd-preview" id="fixed-roll-preview">CC&lt;={SAN} 【正気度ロール】
 CC&lt;={INT} 【アイデア】
 CC&lt;={幸運} 【幸運】</div>
                         </div>
@@ -3814,7 +3814,7 @@ CC&lt;={幸運} 【幸運】</div>
                               style="cursor:pointer;accent-color:var(--accent);width:14px;height:14px">
                             🎲 固定ロール3行
                           </label>
-                          <div class="secret-cmd-preview">CC&lt;={SAN} 【正気度ロール】
+                          <div class="secret-cmd-preview" id="fixed-roll-preview2">CC&lt;={SAN} 【正気度ロール】
 CC&lt;={INT} 【アイデア】
 CC&lt;={幸運} 【幸運】</div>
                         </div>
@@ -5150,6 +5150,14 @@ CC&lt;={幸運} 【幸運】</div>
         const el = document.getElementById(id);
         if (!el) return;
         el.textContent = on ? lines.join("\n") : "（チェックをONにすると表示）";
+      });
+
+      // 固定ロール3行プレビュー（🎲チェックを反映）
+      const _fixedPx = isSkDice() ? "CC({🎲})<=" : "CC<=";
+      const _fixedRollPreviewText = _fixedPx + "{SAN} 【正気度ロール】\n" + _fixedPx + "{INT} 【アイデア】\n" + _fixedPx + "{幸運} 【幸運】";
+      ["fixed-roll-preview", "fixed-roll-preview2", "fixed-roll-preview3"].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = _fixedRollPreviewText;
       });
 
       // 特性値プレビュー更新
