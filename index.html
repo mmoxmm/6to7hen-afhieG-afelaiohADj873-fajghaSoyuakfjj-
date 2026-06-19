@@ -4692,7 +4692,7 @@ CC&lt;={幸運} 【幸運】</div>
         diffLines.forEach(l => result.push(l));
       }
       if (hasStatus) {
-        if (needHeaders) result.push({ isSep: true, text: '━━━ステータス━━━' });
+        if (needHeaders) result.push({ isSep: true, text: '━━━━━ステータス━━━━━' });
         statusLines.forEach(l => result.push(l));
       }
       if (hasParam) {
@@ -5133,7 +5133,7 @@ CC&lt;={幸運} 【幸運】</div>
       const _rawName2 = document.getElementById("npc-name")?.value || "{名前}";
       const name = isStripEmojiOn() ? (stripEmoji(_rawName2) || _rawName2) : _rawName2;
       return [
-        "⚠️systemに名前変更！",
+        "⚠️systemに駒名変更！",
         "[ " + name + " ] HP : n → n",
         "[ " + name + " ] MP : n → n",
         "[ " + name + " ] SAN : n → n",
@@ -6779,7 +6779,11 @@ CC&lt;={幸運} 【幸運】</div>
       }
 
       // 消耗品・MEMOはヘッダーなし（現状どおり）
-      memoBlock.forEach(l => result.push(l));
+      // MEMOブロックの直前には、ブロック区切りとして必ず空行を1行入れる
+      if (memoBlock.length) {
+        result.push({ text: '', isSep: false, _empty: true });
+        memoBlock.forEach(l => result.push(l));
+      }
 
 
       // 先頭の連続空行を除去（区切り線・ヘッダーは残す）
@@ -7045,7 +7049,7 @@ CC&lt;={幸運} 【幸運】</div>
           });
           if (statVarLines.length) {
             if (sepSpaceMode === 'both' || sepSpaceMode === 'before') cmdLines.push('');
-            cmdLines.push("━━━ステータス━━━");
+            cmdLines.push("━━━━━ステータス━━━━━");
             if (sepSpaceMode === 'both') cmdLines.push('');
             statVarLines.forEach(l => cmdLines.push(l));
             if (sepSpaceMode === 'both') cmdLines.push('');
@@ -7080,7 +7084,7 @@ CC&lt;={幸運} 【幸運】</div>
       const addSecretCmd = document.getElementById("chk-secret-cmd")?.checked || false;
       if (addSecretCmd) {
         if (sepSpaceMode === 'both' || sepSpaceMode === 'before') cmdLines.push("");
-        cmdLines.push("━━━秘匿管理━━━");
+        cmdLines.push("━━━━━秘匿管理━━━━━");
         if (sepSpaceMode === 'both') cmdLines.push('');
         getSecretCmdLines().forEach(l => cmdLines.push(l));
         if (sepSpaceMode === 'both') cmdLines.push("");
@@ -7483,9 +7487,12 @@ CC&lt;={幸運} 【幸運】</div>
         try { localStorage.setItem('coc_manual_palette_draft', draftText); } catch { }
       }
 
-      if (data.atkHeader !== undefined) atkHeader = data.atkHeader;
-      if (data.skHeader !== undefined) skHeader = data.skHeader;
-      if (data.splHeader !== undefined) splHeader = data.splHeader;
+      // 旧デフォルト(3本線)のまま保存されていた古いキャラデータは、新デフォルト(5本線)に自動アップグレードする
+      // （ユーザーが意図的にカスタムした文字列はそのまま保持される）
+      const _oldAtkDefault = "━━━⚔️攻撃━━━", _oldSkDefault = "━━━🎯技能━━━", _oldSplDefault = "━━━✨呪文━━━";
+      if (data.atkHeader !== undefined) atkHeader = (data.atkHeader === _oldAtkDefault) ? "━━━━━⚔️攻撃━━━━━" : data.atkHeader;
+      if (data.skHeader !== undefined) skHeader = (data.skHeader === _oldSkDefault) ? "━━━━━🎯技能━━━━━" : data.skHeader;
+      if (data.splHeader !== undefined) splHeader = (data.splHeader === _oldSplDefault) ? "━━━━━✨呪文━━━━━" : data.splHeader;
       buildAtkRows(); buildSkRows(); buildSplRows(); buildMemoRows(); buildConsumableRows();
       // 読込時のブロック開閉（doExpand=true で全展開、false で既存動作）
       if (doExpand) {
