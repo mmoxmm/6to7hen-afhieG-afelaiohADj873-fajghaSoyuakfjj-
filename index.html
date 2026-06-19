@@ -2976,6 +2976,21 @@ CC&lt;={幸運} 【幸運】</div>
             </div>
           </div>
         </div>
+        <!-- コマタブ専用 MEMO -->
+        <div class="accordion" id="acc-koma-memo" style="margin-top:8px;margin-bottom:5px">
+          <div class="acc-hd" onclick="toggleAcc('koma-memo')">
+            <div class="acc-hd-left">
+              <span class="acc-title">📝 MEMO</span>
+              <span class="acc-badge" id="badge-koma-memo">0</span>
+            </div>
+            <span class="acc-arrow open" id="arrow-koma-memo">▼</span>
+          </div>
+          <div class="acc-body open" id="body-koma-memo">
+            <button class="memo-copy-all" onclick="copyAllKomaMemo()">📋 全メモをまとめてコピー</button>
+            <div id="koma-memo-rows"></div>
+            <button class="btn-add" onclick="addKomaMemoRow()">＋ メモ行を追加</button>
+          </div>
+        </div>
         <!-- パレットプレビュー -->
         <div class="accordion" id="acc-koma-palette" style="margin-top:12px;margin-bottom:5px">
           <div class="acc-hd" onclick="toggleAcc('koma-palette')">
@@ -3873,7 +3888,8 @@ CC&lt;={幸運} 【幸運】</div>
       statusList: [],
       paramList: [],
       manualPalette: "",
-      draftPalette: ""
+      draftPalette: "",
+      memoList: []
     };
     let komaList = []; // 保存済みコマ一覧
     let komaNxtId = 1;
@@ -4356,6 +4372,12 @@ CC&lt;={幸運} 【幸運】</div>
           result.push(l.text);
         }
       });
+      // コマ専用MEMO（パレ/両方指定分）を末尾に追加
+      const _komaMemoCmdLines = getKomaMemoCmdLines();
+      if (_komaMemoCmdLines.length) {
+        if (result.length) result.push('');
+        _komaMemoCmdLines.forEach(l => result.push(l));
+      }
       // 末尾の空白行を除去
       while (result.length && result[result.length - 1] === '') result.pop();
       return result.join('\n');
@@ -4422,7 +4444,7 @@ CC&lt;={幸運} 【幸運】</div>
         kind: 'character',
         data: {
           name,
-          memo: '',
+          memo: getKomaMemoFieldLines().join('\n'),
           initiative: vals.dex || 0,
           status,
           params,
@@ -4832,6 +4854,7 @@ CC&lt;={幸運} 【幸運】</div>
         paramList: structuredClone(currentKoma.paramList || []),
         manualPalette: currentKoma.manualPalette || "",
         draftPalette: currentKoma.draftPalette || "",
+        memoList: structuredClone(currentKoma.memoList || []),
         settings: getSettings()
       };
     }
@@ -4848,6 +4871,7 @@ CC&lt;={幸運} 【幸運】</div>
         statusList: JSON.parse(JSON.stringify(currentKoma.statusList || [])),
         paramList: JSON.parse(JSON.stringify(currentKoma.paramList || [])),
         manualPalette: currentKoma.manualPalette || "",
+        memoList: JSON.parse(JSON.stringify(currentKoma.memoList || [])),
         settings: getSettings()
       };
 
@@ -4887,6 +4911,7 @@ CC&lt;={幸運} 【幸運】</div>
       currentKoma.paramList = structuredClone(komaData.paramList || []);
       currentKoma.manualPalette = komaData.manualPalette || "";
       currentKoma.draftPalette = komaData.draftPalette || "";
+      currentKoma.memoList = structuredClone(komaData.memoList || []);
       komaNxtId = currentKoma.labels.length
         ? Math.max(...currentKoma.labels.map(l => Number(l.id) || 0)) + 1
         : 1;
@@ -4899,6 +4924,7 @@ CC&lt;={幸運} 【幸運】</div>
       buildKomaLabelRows();
       buildKomaStatusRows();
       buildKomaParamRows();
+      buildKomaMemoRows();
       renderKomaPalettePreview();
       updateKomaJsonPreview();
       updKomaTabBadges();
@@ -4914,6 +4940,7 @@ CC&lt;={幸運} 【幸運】</div>
       currentKoma.paramList = JSON.parse(JSON.stringify(d.paramList || []));
       currentKoma.manualPalette = d.manualPalette || "";
       currentKoma.draftPalette = "";
+      currentKoma.memoList = JSON.parse(JSON.stringify(d.memoList || []));
       komaNxtId = currentKoma.labels.length
         ? Math.max(...currentKoma.labels.map(l => Number(l.id) || 0)) + 1
         : 1;
@@ -4924,6 +4951,7 @@ CC&lt;={幸運} 【幸運】</div>
       buildKomaLabelRows();
       buildKomaStatusRows();
       buildKomaParamRows();
+      buildKomaMemoRows();
       renderKomaPalettePreview();
       updateKomaJsonPreview();
       updKomaTabBadges();  // ← 追加
@@ -4951,6 +4979,7 @@ CC&lt;={幸運} 【幸運】</div>
         statusList: JSON.parse(JSON.stringify(currentKoma.statusList || [])),
         paramList: JSON.parse(JSON.stringify(currentKoma.paramList || [])),
         manualPalette: currentKoma.manualPalette || "",
+        memoList: JSON.parse(JSON.stringify(currentKoma.memoList || [])),
         settings: getSettings()
       };
       if (isShared) {
@@ -5104,6 +5133,7 @@ CC&lt;={幸運} 【幸運】</div>
       const _rawName2 = document.getElementById("npc-name")?.value || "{名前}";
       const name = isStripEmojiOn() ? (stripEmoji(_rawName2) || _rawName2) : _rawName2;
       return [
+        "⚠️systemに名前変更！",
         "[ " + name + " ] HP : n → n",
         "[ " + name + " ] MP : n → n",
         "[ " + name + " ] SAN : n → n",
@@ -5966,6 +5996,108 @@ CC&lt;={幸運} 【幸運】</div>
       if (el1) el1.textContent = diffN;
       if (el2) el2.textContent = stN;
       if (el3) el3.textContent = prN;
+      updKomaMemoBadge();
+    }
+
+    // ===== ④ コマタブ専用 MEMO（ステータスタブのMEMOと同じ「パレ/メモ/両方/なし」機能） =====
+    function getKomaMemoCmdLines() {
+      return (currentKoma.memoList || [])
+        .filter(m => m.content && (m.dest === "cmd" || m.dest === "both"))
+        .flatMap(m => (m.content || '').split('\n'));
+    }
+    function getKomaMemoFieldLines() {
+      return (currentKoma.memoList || [])
+        .filter(m => m.content && (m.dest === "memo" || m.dest === "both"))
+        .flatMap(m => (m.content || '').split('\n'));
+    }
+    function addKomaMemoRow() {
+      currentKoma.memoList = currentKoma.memoList || [];
+      currentKoma.memoList.push({ id: komaNxtId++, label: "", content: "", dest: "memo" });
+      buildKomaMemoRows();
+    }
+    function updKomaMemoBadge() {
+      const el = document.getElementById("badge-koma-memo");
+      if (el) el.textContent = (currentKoma.memoList || []).filter(m => m.label || m.content).length;
+    }
+    function copyAllKomaMemo() {
+      const lines = (currentKoma.memoList || [])
+        .filter(m => m.label || m.content)
+        .map(m => (m.label ? m.label + "\u3000" : "") + m.content)
+        .join("\n");
+      if (!lines) { showToast("メモがありません"); return; }
+      navigator.clipboard.writeText(lines)
+        .then(() => showToast("全メモをコピーしました"))
+        .catch(() => showToast("コピー失敗"));
+    }
+    function buildKomaMemoRows() {
+      const wrap = document.getElementById("koma-memo-rows");
+      if (!wrap) return;
+      wrap.innerHTML = "";
+      currentKoma.memoList = currentKoma.memoList || [];
+      if (!currentKoma.memoList.length) currentKoma.memoList.push({ id: komaNxtId++, label: "", content: "", dest: "memo" });
+      currentKoma.memoList.forEach((m, idx) => {
+        const row = document.createElement("div");
+        row.style.cssText = "border:0.5px solid var(--border2);border-radius:var(--radius);margin-bottom:4px;overflow:hidden";
+        row.dataset.dnd = idx;
+        const hd = document.createElement("div");
+        hd.style.cssText = "display:flex;align-items:center;gap:4px;padding:4px 6px;background:var(--bg2);border-bottom:0.5px solid var(--border2)";
+        const dh = makeHandle();
+        const lbl = document.createElement("input");
+        lbl.type = "text"; lbl.placeholder = "ラベル"; lbl.value = m.label || "";
+        lbl.style.cssText = "flex:1;font-size:12px;background:transparent;border:none;outline:none;color:var(--text);min-width:0";
+        const dr = document.createElement("div");
+        dr.className = "memo-dest-toggle";
+        dr.style.cssText = "display:grid;grid-template-columns:1fr 1fr;gap:2px;flex-shrink:0";
+        const bM = document.createElement("button"); bM.className = "memo-dest-btn" + (m.dest === "memo" ? " act-memo" : ""); bM.textContent = "メモ";
+        const bC = document.createElement("button"); bC.className = "memo-dest-btn" + (m.dest === "cmd" ? " act-cmd" : ""); bC.textContent = "パレ";
+        const bB = document.createElement("button"); bB.className = "memo-dest-btn" + (m.dest === "both" ? " act-memo" : ""); bB.textContent = "両方";
+        const bN = document.createElement("button"); bN.className = "memo-dest-btn" + (m.dest === "none" ? " act-none" : ""); bN.textContent = "なし";
+        dr.append(bM, bC, bB, bN);
+        const cpBtn = document.createElement("button"); cpBtn.className = "memo-copy-btn"; cpBtn.textContent = "📋";
+        const dlBtn = document.createElement("button"); dlBtn.textContent = "×";
+        dlBtn.style.cssText = "background:none;border:0.5px solid var(--border2);border-radius:3px;color:var(--text3);cursor:pointer;font-size:12px;padding:2px 5px;flex-shrink:0";
+        hd.append(dh, lbl, dr, cpBtn, dlBtn);
+        const bd = document.createElement("div");
+        bd.style.cssText = "padding:4px 6px;background:var(--bg2)";
+        const ct = document.createElement("textarea");
+        ct.placeholder = "メモ内容..."; ct.value = m.content || ""; ct.rows = 1;
+        ct.style.cssText = "width:100%;font-size:13px;background:var(--bg2);border:none;padding:2px 0;min-height:28px;resize:none;overflow:hidden;outline:none;color:var(--text)";
+        bd.appendChild(ct);
+        row.append(hd, bd);
+        wrap.appendChild(row);
+        bindDnD(row, currentKoma.memoList, idx, () => { buildKomaMemoRows(); updateKomaJsonPreview(); renderKomaPalettePreview(); });
+
+        const setD = (d) => {
+          m.dest = d;
+          bM.className = "memo-dest-btn" + (d === "memo" || d === "both" ? " act-memo" : "");
+          bC.className = "memo-dest-btn" + (d === "cmd" || d === "both" ? " act-cmd" : "");
+          bB.className = "memo-dest-btn" + (d === "both" ? " act-memo" : "");
+          bN.className = "memo-dest-btn" + (d === "none" ? " act-none" : "");
+          updateKomaJsonPreview(); renderKomaPalettePreview();
+        };
+        bM.addEventListener("click", e => { e.stopPropagation(); setD("memo"); });
+        bC.addEventListener("click", e => { e.stopPropagation(); setD("cmd"); });
+        bB.addEventListener("click", e => { e.stopPropagation(); setD("both"); });
+        bN.addEventListener("click", e => { e.stopPropagation(); setD("none"); });
+
+        lbl.addEventListener("input", () => { m.label = lbl.value; updKomaMemoBadge(); updateKomaJsonPreview(); });
+        ct.addEventListener("input", () => { m.content = ct.value; autoExpand(ct); updKomaMemoBadge(); updateKomaJsonPreview(); renderKomaPalettePreview(); });
+        bindAutoExpand(ct);
+        cpBtn.addEventListener("click", e => {
+          e.stopPropagation();
+          const txt = (m.label ? m.label + "\u3000" : "") + (m.content || "");
+          navigator.clipboard.writeText(txt).then(() => {
+            cpBtn.textContent = "\u2713"; cpBtn.classList.add("copied");
+            setTimeout(() => { cpBtn.textContent = "\ud83d\udccb"; cpBtn.classList.remove("copied"); }, 1200);
+          }).catch(() => showToast("コピー失敗"));
+        });
+        dlBtn.addEventListener("click", e => {
+          e.stopPropagation();
+          currentKoma.memoList = currentKoma.memoList.filter(x => x.id !== m.id);
+          buildKomaMemoRows(); updKomaMemoBadge(); updateKomaJsonPreview(); renderKomaPalettePreview();
+        });
+      });
+      updKomaMemoBadge();
     }
     function addSkSep() { skList.push({ id: nxtId++, _sep: true, label: "" }); buildSkRows(); renderPalettePreview(); }
     function updSkBadge() { document.getElementById("badge-sk").textContent = skList.filter(s => s.name && (s.val || 0) > 0).length; }
@@ -6160,7 +6292,7 @@ CC&lt;={幸運} 【幸運】</div>
       try { localStorage.removeItem('coc_manual_palette_draft'); } catch { }
       buildConsumableRows(); clearParse(); buildSkRows(); buildAtkRows(); buildSplRows(); buildMemoRows();
       // コマタブもリセット
-      currentKoma = { id: 0, name: "", globalAt: "@", labels: [], statusList: [], paramList: [], manualPalette: "" };
+      currentKoma = { id: 0, name: "", globalAt: "@", labels: [], statusList: [], paramList: [], manualPalette: "", memoList: [] };
       komaNxtId = 1;
       const komaNameEl = document.getElementById("koma-name");
       if (komaNameEl) komaNameEl.value = "";
@@ -6168,6 +6300,7 @@ CC&lt;={幸運} 【幸運】</div>
       buildKomaLabelRows();
       buildKomaStatusRows();
       buildKomaParamRows();
+      buildKomaMemoRows();
       renderKomaPalettePreview();
       const kmta = document.getElementById("koma-manual-textarea");
       if (kmta) kmta.value = "";
@@ -6182,6 +6315,7 @@ CC&lt;={幸運} 【幸運】</div>
       currentKoma = { id: 0, name: "", globalAt: "@", labels: [], manualPalette: "" };
       currentKoma.statusList = [];
       currentKoma.paramList = [];
+      currentKoma.memoList = [];
       komaNxtId = 1;
       const nameEl = document.getElementById("koma-name");
       if (nameEl) { nameEl.value = ""; document.getElementById("w-komaname")?.classList.remove("hv"); }
@@ -6190,6 +6324,7 @@ CC&lt;={幸運} 【幸運】</div>
       buildKomaLabelRows();
       buildKomaStatusRows();
       buildKomaParamRows();
+      buildKomaMemoRows();
       renderKomaPalettePreview();
       const ta = document.getElementById("koma-manual-textarea");
       if (ta) ta.value = "";
@@ -6902,7 +7037,7 @@ CC&lt;={幸運} 【幸運】</div>
           });
           if (statVarLines.length) {
             if (sepSpaceMode === 'both' || sepSpaceMode === 'before') cmdLines.push('');
-            cmdLines.push("━━━━━ステータス━━━━━");
+            cmdLines.push("━━━ステータス━━━");
             if (sepSpaceMode === 'both') cmdLines.push('');
             statVarLines.forEach(l => cmdLines.push(l));
             if (sepSpaceMode === 'both') cmdLines.push('');
@@ -6925,7 +7060,8 @@ CC&lt;={幸運} 【幸運】</div>
       // 保存データには記録せず、常にデフォルトONのグローバル変数として扱う。
       // パレットプレビューには表示せず、最終出力JSON(commands)の先頭にのみ反映する。
       if (_fixedSanRolls) {
-        cmdLines = ["CC<={SAN} 【正気度ロール】", "CC<={INT} 【アイデア】", "CC<={幸運} 【幸運】", "", ...cmdLines];
+        const _fixedRollPx = isSkDice() ? "CC({🎲})<=" : "CC<=";
+        cmdLines = [_fixedRollPx + "{SAN} 【正気度ロール】", _fixedRollPx + "{INT} 【アイデア】", _fixedRollPx + "{幸運} 【幸運】", "", ...cmdLines];
       }
 
       const _stripMemoOnExport = isStripMemoOn();
@@ -6936,7 +7072,7 @@ CC&lt;={幸運} 【幸運】</div>
       const addSecretCmd = document.getElementById("chk-secret-cmd")?.checked || false;
       if (addSecretCmd) {
         if (sepSpaceMode === 'both' || sepSpaceMode === 'before') cmdLines.push("");
-        cmdLines.push("━━━━━秘匿管理━━━━━");
+        cmdLines.push("━━━秘匿管理━━━");
         if (sepSpaceMode === 'both') cmdLines.push('');
         getSecretCmdLines().forEach(l => cmdLines.push(l));
         if (sepSpaceMode === 'both') cmdLines.push("");
@@ -8636,6 +8772,7 @@ CC&lt;={幸運} 【幸運】</div>
       buildKomaLabelRows();
       buildKomaStatusRows();
       buildKomaParamRows();
+      buildKomaMemoRows();
       renderKomaPalettePreview();
       renderKomaSaveList();
       komaList = lSavedKomas();
@@ -8669,6 +8806,15 @@ CC&lt;={幸運} 【幸運】</div>
     if (savedSToken) { const inp = document.getElementById("shared-token-input"); if (inp) inp.value = savedSToken; applySharedKey(savedSToken); }
     const savedSGist = localStorage.getItem(L_SGIST) || "";
     if (savedSGist) { sharedGistId = savedSGist; updSharedGistDisplay(); const inp = document.getElementById("shared-gist-id-input"); if (inp) inp.value = savedSGist; document.getElementById("btn-shared-upload").disabled = !savedSToken; document.getElementById("btn-shared-download").disabled = !savedSToken; }
+
+    // ③ 起動時（ページ読み込み/更新時）に自動でクラウド・共有データを取得する
+    //   手動で「⬇️ 取得」ボタンを押す必要がなくなる
+    (async () => {
+      try {
+        if (savedToken) await downloadFromCloud();
+        if (sharedToken) await downloadFromShared();
+      } catch { }
+    })();
 
     // 起動時にタグ順をクラウドから取得（共有優先、なければ個人）
     (async () => {
