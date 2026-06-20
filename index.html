@@ -2983,10 +2983,13 @@ CC&lt;={幸運} 【幸運】</div>
               <span class="acc-title">📝 MEMO</span>
               <span class="acc-badge" id="badge-koma-memo">0</span>
             </div>
-            <span class="acc-arrow open" id="arrow-koma-memo">▼</span>
+            <div style="display:flex;align-items:center;gap:8px">
+              <button class="memo-copy-all" onclick="event.stopPropagation();copyAllKomaMemo()"
+                style="width:auto;margin-bottom:0">📋 全メモをまとめてコピー</button>
+              <span class="acc-arrow open" id="arrow-koma-memo">▼</span>
+            </div>
           </div>
           <div class="acc-body open" id="body-koma-memo">
-            <button class="memo-copy-all" onclick="copyAllKomaMemo()">📋 全メモをまとめてコピー</button>
             <div id="koma-memo-rows"></div>
             <button class="btn-add" onclick="addKomaMemoRow()">＋ メモ行を追加</button>
           </div>
@@ -6052,10 +6055,10 @@ CC&lt;={幸運} 【幸運】</div>
         const dh = makeHandle();
         const lbl = document.createElement("input");
         lbl.type = "text"; lbl.placeholder = "ラベル"; lbl.value = m.label || "";
-        lbl.style.cssText = "flex:1;font-size:12px;background:transparent;border:none;outline:none;color:var(--text);min-width:0";
+        lbl.style.cssText = "flex:1;font-size:11px;background:var(--bg);border:0.5px solid var(--border2);border-radius:3px;outline:none;color:var(--text3);min-width:0;height:20px;padding:0 6px;box-sizing:border-box";
         const dr = document.createElement("div");
         dr.className = "memo-dest-toggle";
-        dr.style.cssText = "display:grid;grid-template-columns:1fr 1fr;gap:2px;flex-shrink:0";
+        dr.style.cssText = "display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:2px;flex-shrink:0";
         const bM = document.createElement("button"); bM.className = "memo-dest-btn" + (m.dest === "memo" ? " act-memo" : ""); bM.textContent = "メモ";
         const bC = document.createElement("button"); bC.className = "memo-dest-btn" + (m.dest === "cmd" ? " act-cmd" : ""); bC.textContent = "パレ";
         const bB = document.createElement("button"); bB.className = "memo-dest-btn" + (m.dest === "both" ? " act-memo" : ""); bB.textContent = "両方";
@@ -6069,7 +6072,7 @@ CC&lt;={幸運} 【幸運】</div>
         bd.style.cssText = "padding:4px 6px;background:var(--bg2)";
         const ct = document.createElement("textarea");
         ct.placeholder = "メモ内容..."; ct.value = m.content || ""; ct.rows = 1;
-        ct.style.cssText = "width:100%;font-size:13px;background:var(--bg2);border:none;padding:2px 0;min-height:28px;resize:none;overflow:hidden;outline:none;color:var(--text)";
+        ct.style.cssText = "width:100%;font-size:13px;background:var(--bg);border:0.5px solid var(--border2);border-radius:3px;padding:4px 6px;min-height:28px;resize:none;overflow:hidden;outline:none;color:var(--text);box-sizing:border-box";
         bd.appendChild(ct);
         row.append(hd, bd);
         wrap.appendChild(row);
