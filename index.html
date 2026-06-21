@@ -1608,6 +1608,10 @@
       flex-shrink: 0
     }
 
+    .btn-sync.active-reorder {
+      background: var(--danger);
+    }
+
     .sync-status {
       font-size: 12px;
       margin-top: 3px;
@@ -2694,6 +2698,11 @@
                 <input type="radio" name="cmd-order3" value="atk-first" onchange="syncStatTabSetting(this,'cmd-order')"
                   style="cursor:pointer;accent-color:var(--accent)">⚔️ 공격 → 🎯 기능
               </label>
+              <label
+                style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:12px;color:var(--text2);margin-top:3px">
+                <input type="checkbox" id="chk-cons-first" onchange="syncConsFirstCheck(this)"
+                  style="cursor:pointer;accent-color:var(--accent);width:14px;height:14px">소모품을 먼저 출력
+              </label>
             </div>
             <div
               style="padding:5px 8px;background:var(--bg2);border-radius:var(--radius);border:0.5px solid var(--border2)">
@@ -3511,6 +3520,11 @@ CC&lt;={幸運} 【幸運】</div>
                       onchange="updateExport()" style="cursor:pointer;accent-color:var(--accent)">
                     ⚔️ 공격 → 🎯 기능
                   </label>
+                  <label
+                    style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:12px;color:var(--text2);margin-top:3px">
+                    <input type="checkbox" id="chk-cons-first2" onchange="syncConsFirstCheck(this)"
+                      style="cursor:pointer;accent-color:var(--accent);width:14px;height:14px">소모품을 먼저 출력
+                  </label>
                 </div>
                 <div
                   style="padding:5px 8px;background:var(--bg2);border-radius:var(--radius);border:0.5px solid var(--border2);">
@@ -3639,6 +3653,8 @@ CC&lt;={幸運} 【幸運】</div>
             <button class="btn-pri" id="btn-save-current" style="flex:2;min-width:0">💾 저장（클라우드 동기화）</button>
             <button class="btn-sync" id="btn-download2" style="flex:1;min-width:0;font-size:12px" disabled
               onclick="downloadFromCloud()">⬇️ 클라우드에서 가져오기</button>
+            <button class="btn-sync" id="btn-reorder-personal" style="flex:1;min-width:0;font-size:12px"
+              onclick="togglePersonalReorder()">🔀 並び替え</button>
           </div>
           <div style="display:flex;align-items:center;gap:3px;margin-bottom:6px;flex-wrap:wrap">
             <div class="save-filter-bar" style="margin-bottom:0;display:flex;gap:3px;flex-shrink:0">
@@ -3747,6 +3763,11 @@ CC&lt;={幸運} 【幸運】</div>
                     <input type="radio" name="cmd-order2" value="atk-first" onchange="updateExport()"
                       style="cursor:pointer;accent-color:var(--accent)">
                     ⚔️ 공격 → 🎯 기능
+                  </label>
+                  <label
+                    style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:12px;color:var(--text2);margin-top:3px">
+                    <input type="checkbox" id="chk-cons-first3" onchange="syncConsFirstCheck(this)"
+                      style="cursor:pointer;accent-color:var(--accent);width:14px;height:14px">소모품을 먼저 출력
                   </label>
                 </div>
                 <div
@@ -3872,6 +3893,8 @@ CC&lt;={幸運} 【幸運】</div>
               저장（클라우드 동기화）</button>
             <button class="btn-sync" id="btn-shared-download2"
               style="flex:1;min-width:0;font-size:12px;background:var(--success)" disabled>⬇️ 클라우드에서 가져오기</button>
+            <button class="btn-sync" id="btn-reorder-shared" style="flex:1;min-width:0;font-size:12px;background:var(--success)"
+              onclick="toggleSharedReorder()">🔀 並び替え</button>
           </div>
           <div id="shared-list-wrap">
             <p class="save-empty">まだ共有データがありません</p>
@@ -3897,6 +3920,9 @@ CC&lt;={幸運} 【幸運】</div>
     let komaList = []; // 保存済みコマ一覧
     let komaNxtId = 1;
     let currentSaveFilter = "all"; // "all" | "char" | "koma"
+    let _reorderPersonal = false;
+    let _reorderShared = false;
+    let _reorderSharedList = null; // 並び替え中の共有保存リストのスナップショット
     let _sharedFilter = "all";
     let _personalTagFilter = null; // null=全て、string=タグ名
     let _sharedTagFilter = null;
@@ -6265,7 +6291,123 @@ CC&lt;={幸運} 【幸運】</div>
         showToast("クリップボードへのアクセスが拒否されました");
       }
     }
-    function applyParsed(p) { Object.keys(p.stats).forEach(key => { const rawVal = p.stats[key]; const newV7 = inputMode === 7 ? rawVal : rawVal * 5; vals[key] = newV7; const inp = document.querySelector('.sg-inp[data-key="' + key + '"]'); if (inp) { inp.value = inputMode === 6 ? rawVal : newV7; inp.parentElement.querySelector(".sg-clr").style.display = "block"; } }); if (p.hp !== null) { ov.hp = p.hp; ovManual.hp = true; const i = document.getElementById("di-hp"); if (i) { i.value = p.hp; const c = document.getElementById("dc-hp"); if (c) c.style.display = "block"; } } if (p.mp !== null) { ov.mp = p.mp; ovManual.mp = true; const i = document.getElementById("di-mp"); if (i) { i.value = p.mp; const c = document.getElementById("dc-mp"); if (c) c.style.display = "block"; } } if (p.san !== null) { ov.san = p.san; ovManual.san = true; const i = document.getElementById("di-san"); if (i) { i.value = p.san; const c = document.getElementById("dc-san"); if (c) c.style.display = "block"; } } if (p.luck != null) { ov.luck = p.luck; ovManual.luck = true; const i = document.getElementById("di-luck"); if (i) { i.value = p.luck; const c = document.getElementById("dc-luck"); if (c) c.style.display = "block"; } } if (p.attacks.length) { atkList = atkList.filter(a => a._sep || a.name); p.attacks.forEach(a => { if (!atkList.find(x => x.name === a.name)) atkList.push({ id: nxtId++, name: a.name, pct: parseInt(a.pct) || 0, dmg: a.dmg, note: a.note || "", useDB: a.useDB || false }); }); if (!atkList.length) atkList = [{ id: nxtId++, name: "", pct: 0, dmg: "", note: "", useDB: false }]; buildAtkRows(); openAcc("atk"); } if (p.skills.length) { skList = skList.filter(s => s._sep || (s.name && (s.val || 0) > 0)); p.skills.forEach(s => { if (!skList.find(x => x.name === s.name)) skList.push({ id: nxtId++, name: s.name, val: s.val }); }); if (!skList.length) skList = [{ id: nxtId++, name: "", val: 0 }]; buildSkRows(); } if (p.memos.length) { memoList = memoList.filter(m => m.label || m.content); p.memos.forEach(m => { if (!memoList.find(x => x.label === m.label)) memoList.push({ id: nxtId++, label: m.label, content: m.content, dest: "cmd" }); }); buildMemoRows(); openMemo(); saveMemoLocal(); } if (p._characterName && !document.getElementById("npc-name").value) { document.getElementById("npc-name").value = p._characterName; document.getElementById("w-npcname").classList.add("hv"); } updateStatDisplay(); }
+    function applyParsed(p) {
+      const conflicts = [];
+
+      // ----- 特性値（STR/CON/POW...） -----
+      Object.keys(p.stats).forEach(key => {
+        const rawVal = p.stats[key]; const newV7 = inputMode === 7 ? rawVal : rawVal * 5;
+        const applyStat = () => {
+          vals[key] = newV7;
+          const inp = document.querySelector('.sg-inp[data-key="' + key + '"]');
+          if (inp) { inp.value = inputMode === 6 ? rawVal : newV7; inp.parentElement.querySelector(".sg-clr").style.display = "block"; }
+        };
+        const existingV7 = vals[key] || 0;
+        if (existingV7 > 0 && existingV7 !== newV7) {
+          const meta = STATS.find(s => s.key === key);
+          conflicts.push({ type: 'stat', name: meta ? meta.label : key.toUpperCase(), oldVal: existingV7, newVal: newV7, apply: applyStat });
+        } else applyStat();
+      });
+
+      // ----- 派生値（HP/MP/SAN/幸運） -----
+      [
+        { key: 'hp', label: 'HP', val: p.hp },
+        { key: 'mp', label: 'MP', val: p.mp },
+        { key: 'san', label: 'SAN', val: p.san },
+        { key: 'luck', label: '幸運', val: p.luck }
+      ].forEach(d => {
+        if (d.val === null || d.val === undefined) return;
+        const applyDerived = () => {
+          ov[d.key] = d.val; ovManual[d.key] = true;
+          const i = document.getElementById("di-" + d.key);
+          if (i) { i.value = d.val; const c = document.getElementById("dc-" + d.key); if (c) c.style.display = "block"; }
+        };
+        const hasExisting = ovManual[d.key] && ov[d.key] !== null && ov[d.key] !== undefined;
+        if (hasExisting && ov[d.key] !== d.val) {
+          conflicts.push({ type: 'derived', name: d.label, oldVal: ov[d.key], newVal: d.val, apply: applyDerived });
+        } else applyDerived();
+      });
+
+      // ----- 攻撃 -----
+      if (p.attacks.length) {
+        atkList = atkList.filter(a => a._sep || a.name);
+        p.attacks.forEach(a => {
+          const newPct = parseInt(a.pct) || 0;
+          const existing = atkList.find(x => x.name === a.name);
+          if (existing) {
+            if ((existing.pct || 0) !== newPct) conflicts.push({ type: 'atk', name: a.name, oldVal: existing.pct || 0, newVal: newPct, apply: () => { existing.pct = newPct; } });
+          } else {
+            atkList.push({ id: nxtId++, name: a.name, pct: newPct, dmg: a.dmg, note: a.note || "", useDB: a.useDB || false });
+          }
+        });
+        if (!atkList.length) atkList = [{ id: nxtId++, name: "", pct: 0, dmg: "", note: "", useDB: false }];
+        buildAtkRows(); openAcc("atk");
+      }
+
+      // ----- 技能 -----
+      if (p.skills.length) {
+        skList = skList.filter(s => s._sep || (s.name && (s.val || 0) > 0));
+        p.skills.forEach(s => {
+          const existing = skList.find(x => x.name === s.name);
+          if (existing) {
+            if ((existing.val || 0) !== s.val) conflicts.push({ type: 'sk', name: s.name, oldVal: existing.val || 0, newVal: s.val, apply: () => { existing.val = s.val; } });
+          } else {
+            skList.push({ id: nxtId++, name: s.name, val: s.val });
+          }
+        });
+        if (!skList.length) skList = [{ id: nxtId++, name: "", val: 0 }];
+        buildSkRows();
+      }
+
+      if (p.memos.length) {
+        memoList = memoList.filter(m => m.label || m.content);
+        p.memos.forEach(m => { if (!memoList.find(x => x.label === m.label)) memoList.push({ id: nxtId++, label: m.label, content: m.content, dest: "cmd" }); });
+        buildMemoRows(); openMemo(); saveMemoLocal();
+      }
+      if (p._characterName && !document.getElementById("npc-name").value) {
+        document.getElementById("npc-name").value = p._characterName; document.getElementById("w-npcname").classList.add("hv");
+      }
+      updateStatDisplay();
+      if (conflicts.length) showParseConflictModal(conflicts);
+    }
+
+    // ===== 同일 라벨 덮어쓰기 확인 모달 =====
+    function showParseConflictModal(conflicts) {
+      const typeIcon = { atk: '⚔️', sk: '🎯', stat: '💪', derived: '❤️' };
+      const overlay = document.createElement("div");
+      overlay.id = "parseConflictModal";
+      overlay.style.cssText = "position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9100;display:flex;align-items:center;justify-content:center;padding:20px";
+      const rows = conflicts.map((c, i) => {
+        return '<label data-cidx="' + i + '" style="display:flex;align-items:center;gap:10px;padding:8px 10px;border:0.5px solid var(--border2);border-radius:var(--radius);margin-bottom:6px;background:var(--bg2);cursor:pointer">'
+          + '<input type="checkbox" class="parse-conflict-chk" checked style="width:16px;height:16px;cursor:pointer;flex-shrink:0;accent-color:var(--accent)">'
+          + '<span style="font-size:13px;flex-shrink:0">' + (typeIcon[c.type] || '•') + '</span>'
+          + '<span style="font-weight:700;font-size:13px;color:var(--text);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(c.name) + '</span>'
+          + '<span style="font-family:monospace;font-size:13px;color:var(--text3);flex-shrink:0">' + esc(String(c.oldVal)) + '</span>'
+          + '<span style="color:var(--text3);flex-shrink:0">→</span>'
+          + '<span style="font-family:monospace;font-size:14px;font-weight:700;color:var(--accent);flex-shrink:0;min-width:34px;text-align:right">' + esc(String(c.newVal)) + '</span>'
+          + '</label>';
+      }).join("");
+      overlay.innerHTML = '<div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:18px;width:380px;max-width:92vw;box-shadow:0 8px 32px rgba(0,0,0,.3)">'
+        + '<h3 style="font-size:15px;font-weight:700;margin-bottom:10px;text-align:center;color:var(--text)">⚠️ 동일 라벨 덮어쓰기 확인</h3>'
+        + '<div style="font-size:12px;margin-bottom:10px;text-align:center;line-height:1.7;color:#000;text-shadow:-1px -1px 0 #fff,1px -1px 0 #fff,-1px 1px 0 #fff,1px 1px 0 #fff,0 0 4px #fff">기존 수치와 다른 항목이 발견되었습니다.<br>체크한 항목만 덮어씁니다.</div>'
+        + '<div style="max-height:300px;overflow-y:auto;margin-bottom:14px">' + rows + '</div>'
+        + '<div style="display:flex;gap:8px;justify-content:center">'
+        + '<button class="btn-sec" id="parseConflictSkip" style="flex:1">모두 무시</button>'
+        + '<button class="btn-pri" id="parseConflictApply" style="flex:1">선택 항목 덮어쓰기</button>'
+        + '</div></div>';
+      document.body.appendChild(overlay);
+      const close = () => { if (overlay.parentNode) document.body.removeChild(overlay); };
+      overlay.addEventListener("click", e => { if (e.target === overlay) close(); });
+      overlay.querySelector("#parseConflictSkip").addEventListener("click", () => { close(); showToast("上書きは行いませんでした"); });
+      overlay.querySelector("#parseConflictApply").addEventListener("click", () => {
+        const checks = overlay.querySelectorAll(".parse-conflict-chk");
+        let count = 0;
+        conflicts.forEach((c, i) => { if (checks[i].checked) { c.apply(); count++; } });
+        close();
+        if (count) { buildAtkRows(); buildSkRows(); updateStatDisplay(); showToast(count + '件を上書きしました'); }
+        else showToast("上書きは行いませんでした");
+      });
+    }
     function fullReset() {
       if (!confirm("全データをリセットしますか？")) return;
       document.getElementById("npc-name").value = "";
@@ -6971,6 +7113,19 @@ CC&lt;={幸運} 【幸運】</div>
     function syncUseV6Check(el) { ["chk-use-v6", "chk-use-v6-2", "chk-use-v6-3"].forEach(id => { const t = document.getElementById(id); if (t && t !== el) t.checked = el.checked; }); updateExport(); }
     function isUseV6() { return document.getElementById("chk-use-v6")?.checked || document.getElementById("chk-use-v6-2")?.checked || false; }
     function isSkDice() { return document.getElementById("chk-sk-dice")?.checked || document.getElementById("chk-sk-dice-save")?.checked || document.getElementById("chk-sk-dice2")?.checked || false; }
+    function isConsumablesFirstOn() {
+      return document.getElementById("chk-cons-first")?.checked
+        || document.getElementById("chk-cons-first2")?.checked
+        || document.getElementById("chk-cons-first3")?.checked
+        || false;
+    }
+    function syncConsFirstCheck(el) {
+      ["chk-cons-first", "chk-cons-first2", "chk-cons-first3"].forEach(id => {
+        const t = document.getElementById(id);
+        if (t) t.checked = el.checked;
+      });
+      updateExport();
+    }
     function buildCocoforiaJson(includeKoma = false, tabCtx = 'personal') {
       const _rawName = document.getElementById("npc-name").value || "NPC";
       const name = isStripEmojiOn() ? (stripEmoji(_rawName) || _rawName) : _rawName;
@@ -6980,23 +7135,30 @@ CC&lt;={幸運} 【幸運】</div>
       if (mp > 0) status.push({ label: "MP", value: mp, max: mp });
       if (san > 0) status.push({ label: "SAN", value: san, max: san });
       if (luck > 0) status.push({ label: "幸運", value: luck, max: luck });
-      consumables.filter(c => c.label).forEach(c => {
-        const cur = parseInt(c.cur) || 0, max = parseInt(c.max) || 0;
-        status.push({ label: c.label, value: cur, max: max || cur });
-      });
+      const _pushConsumables = () => {
+        consumables.filter(c => c.label).forEach(c => {
+          const cur = parseInt(c.cur) || 0, max = parseInt(c.max) || 0;
+          status.push({ label: c.label, value: cur, max: max || cur });
+        });
+      };
+      const _pushCustomFields = () => {
+        customFields.forEach(cf => {
+          if (cf.label) {
+            const cur = parseInt(cf.value) || 0;
+            const max = parseInt(cf.max) || cur;
+            status.push({ label: cf.label, value: cur, max: max });
+          }
+        });
+      };
+      // デフォルト：追加ステータス → 消耗品（「소모품을 먼저 출력」ONなら従来通り 消耗品 → 追加ステータス）
+      if (isConsumablesFirstOn()) { _pushConsumables(); _pushCustomFields(); }
+      else { _pushCustomFields(); _pushConsumables(); }
 
       const params = [];
       const useV6 = isUseV6();
       STATS.forEach(({ key, label }) => {
         const v = vals[key] || 0;
         if (v > 0) params.push({ label, value: String(useV6 ? Math.round(v / 5) : v) });
-      });
-      customFields.forEach(cf => {
-        if (cf.label) {
-          const cur = parseInt(cf.value) || 0;
-          const max = parseInt(cf.max) || cur;
-          status.push({ label: cf.label, value: cur, max: max });
-        }
       });
       // extraParams をparamsに追加
       extraParams.filter(p => p.label).forEach(p => {
@@ -8343,9 +8505,62 @@ CC&lt;={幸運} 【幸運】</div>
         });
       });
     }
+    // ===== 🔀 並び替えモード（個人/共有保存） =====
+    function togglePersonalReorder() {
+      _reorderPersonal = !_reorderPersonal;
+      const btn = document.getElementById('btn-reorder-personal');
+      if (btn) { btn.textContent = _reorderPersonal ? '✅ 完了' : '🔀 並び替え'; btn.classList.toggle('active-reorder', _reorderPersonal); }
+      if (!_reorderPersonal) {
+        writeSaves(currentSaves);
+        if (syncToken) {
+          setGlobalSt("並び順を同期中…", "ing");
+          gistSet({ saves: lSaves(), mythos: { beings: customBeings, spells: customSpells }, tagOrder: _tagOrder, tagSaveOrder: _tagSaveOrder })
+            .then(ok => setGlobalSt(ok ? "✓ 並び順を保存しました" : "⚠ 同期失敗", ok ? "ok" : "err"));
+        } else {
+          showToast('並び順を保存しました');
+        }
+        renderKomaSaveList(); renderStatSaveList();
+      } else {
+        showToast('☰ハンドルをドラッグして並び替え。完了したらもう一度ボタンを押してください');
+      }
+      renderSaveList();
+    }
+    function toggleSharedReorder() {
+      _reorderShared = !_reorderShared;
+      const btn = document.getElementById('btn-reorder-shared');
+      if (btn) { btn.textContent = _reorderShared ? '✅ 完了' : '🔀 並び替え'; btn.classList.toggle('active-reorder', _reorderShared); }
+      if (_reorderShared) {
+        _reorderSharedList = lSharedSaves();
+        showToast('☰ハンドルをドラッグして並び替え。完了したらもう一度ボタンを押してください');
+      } else {
+        if (_reorderSharedList) wSharedSaves(_reorderSharedList);
+        _reorderSharedList = null;
+        if (sharedToken) {
+          setGlobalSt("共有の並び順を同期中…", "ing");
+          sharedGistSet({ saves: lSharedSaves(), tagOrder: _tagOrder, tagSaveOrder: _tagSaveOrder })
+            .then(ok => setGlobalSt(ok ? "✓ 共有の並び順を保存しました" : "⚠ 共有同期失敗", ok ? "ok" : "err"));
+        } else {
+          showToast('並び順を保存しました');
+        }
+        renderKomaSaveList(); renderStatSaveList();
+      }
+      renderSharedList();
+    }
     function renderSaveList() {
       const wrap = document.getElementById("save-list-wrap");
       if (!wrap) return;
+      if (_reorderPersonal) {
+        if (!currentSaves.length) { wrap.innerHTML = '<p class="save-empty">データなし</p>'; return; }
+        wrap.innerHTML = '<div style="font-size:12px;font-weight:700;color:var(--accent);margin-bottom:6px">🔀 並び替え中（フィルター・タグ別並び順は一時的に無視されます）</div><div class="save-list">'
+          + currentSaves.map((sv, idx) => '<div data-dnd="' + idx + '" style="display:flex;align-items:stretch;gap:2px">'
+            + '<div class="sort-handle" style="cursor:grab;display:flex;align-items:center;padding:0 4px;color:var(--text3);flex-shrink:0;touch-action:none">☰</div>'
+            + '<div style="flex:1;min-width:0;pointer-events:none">' + renderSaveCard(sv, false, 'save') + '</div>'
+            + '</div>').join("")
+          + '</div>';
+        wrap.querySelectorAll('[data-dnd]').forEach(el => { const idx = +el.dataset.dnd; bindDnD(el, currentSaves, idx, () => renderSaveList()); });
+        wrap.querySelectorAll('[data-sortbtn]').forEach(el => el.style.display = 'none');
+        return;
+      }
       const f = currentSaveFilter || "all";
       let saves = currentSaves.filter(sv => {
         if (f === "char") return getSaveKind(sv) === "char";
@@ -8423,6 +8638,19 @@ CC&lt;={幸運} 【幸運】</div>
     }
     function renderSharedList() {
       const wrap = document.getElementById("shared-list-wrap");
+      if (_reorderShared) {
+        const list = _reorderSharedList || (_reorderSharedList = lSharedSaves());
+        if (!list.length) { wrap.innerHTML = '<p class="save-empty">データなし</p>'; return; }
+        wrap.innerHTML = '<div style="font-size:12px;font-weight:700;color:var(--accent);margin-bottom:6px">🔀 並び替え中（フィルター・タグ別並び順は一時的に無視されます）</div><div class="save-list">'
+          + list.map((sv, idx) => '<div data-dnd="' + idx + '" style="display:flex;align-items:stretch;gap:2px">'
+            + '<div class="sort-handle" style="cursor:grab;display:flex;align-items:center;padding:0 4px;color:var(--text3);flex-shrink:0;touch-action:none">☰</div>'
+            + '<div style="flex:1;min-width:0;pointer-events:none">' + renderSaveCard(sv, true, 'save') + '</div>'
+            + '</div>').join("")
+          + '</div>';
+        wrap.querySelectorAll('[data-dnd]').forEach(el => { const idx = +el.dataset.dnd; bindDnD(el, list, idx, () => renderSharedList()); });
+        wrap.querySelectorAll('[data-sortbtn]').forEach(el => el.style.display = 'none');
+        return;
+      }
       const shared = lSharedSaves();
       const filterBar = '<div style="display:flex;align-items:center;gap:3px;margin-bottom:6px;flex-wrap:wrap">'
         + '<div class="save-filter-bar" style="margin-bottom:0;display:flex;gap:3px;flex-shrink:0">'
