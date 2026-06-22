@@ -2703,7 +2703,7 @@
               <label
                 style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:12px;color:var(--text2);margin-top:3px">
                 <input type="checkbox" id="chk-cons-first" onchange="syncConsFirstCheck(this)"
-                  style="cursor:pointer;accent-color:var(--accent);width:14px;height:14px">소모품을 먼저 출력
+                  style="cursor:pointer;accent-color:var(--accent);width:14px;height:14px">「消耗品」을 먼저 출력
               </label>
             </div>
             <div
@@ -3529,7 +3529,7 @@ CC&lt;={幸運} 【幸運】</div>
                   <label
                     style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:12px;color:var(--text2);margin-top:3px">
                     <input type="checkbox" id="chk-cons-first2" onchange="syncConsFirstCheck(this)"
-                      style="cursor:pointer;accent-color:var(--accent);width:14px;height:14px">소모품을 먼저 출력
+                      style="cursor:pointer;accent-color:var(--accent);width:14px;height:14px">「消耗品」을 먼저 출력
                   </label>
                 </div>
                 <div
@@ -3773,7 +3773,7 @@ CC&lt;={幸運} 【幸運】</div>
                   <label
                     style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:12px;color:var(--text2);margin-top:3px">
                     <input type="checkbox" id="chk-cons-first3" onchange="syncConsFirstCheck(this)"
-                      style="cursor:pointer;accent-color:var(--accent);width:14px;height:14px">소모품을 먼저 출력
+                      style="cursor:pointer;accent-color:var(--accent);width:14px;height:14px">「消耗品」을 먼저 출력
                   </label>
                 </div>
                 <div
@@ -7216,7 +7216,7 @@ CC&lt;={幸運} 【幸運】</div>
           }
         });
       };
-      // デフォルト：追加ステータス → 消耗品（「소모품을 먼저 출력」ONなら従来通り 消耗品 → 追加ステータス）
+      // デフォルト：追加ステータス → 消耗品（「「消耗品」을 먼저 출력」ONなら従来通り 消耗品 → 追加ステータス）
       if (isConsumablesFirstOn()) { _pushConsumables(); _pushCustomFields(); }
       else { _pushCustomFields(); _pushConsumables(); }
 
@@ -9116,7 +9116,7 @@ CC&lt;={幸運} 【幸運】</div>
       renderKomaSaveList();
       komaList = lSavedKomas();
 
-      // 「소모품을 먼저 출력」設定を復元
+      // 「「消耗品」을 먼저 출력」設定を復元
       try {
         const consFirstSaved = localStorage.getItem('coc_cons_first') === '1';
         ["chk-cons-first", "chk-cons-first2", "chk-cons-first3"].forEach(id => {
