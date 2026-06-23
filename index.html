@@ -5554,6 +5554,13 @@ CC&lt;={幸運} 【幸運】</div>
       inp.style.background = val || "#888888";
       inp.style.color = "#000000";
     }
+    function updateNpcColorPreview() {
+      const inp = document.getElementById("npc-color");
+      if (!inp) return;
+      const val = (inp.value || "").trim();
+      inp.style.background = val || "#888888";
+      inp.style.color = "#000000";
+    }
     // 2カラムペア定義（片方を開いたとき相手も開く）
     const _accPairs = { 'atk': 'cons', 'cons': 'atk' };
 
@@ -8024,8 +8031,10 @@ CC&lt;={幸運} 【幸運】</div>
       // ---- 1行目：名前 + タグ + ボタン + 日付 ----
       const colorChipHtml = sv.color ? ('<span style="display:inline-flex;align-items:center;gap:3px;font-size:11px;color:var(--text3);flex-shrink:0;white-space:nowrap"><span style="width:12px;height:12px;border-radius:3px;border:0.5px solid var(--border2);background:' + esc(sv.color) + ';display:inline-block;flex-shrink:0"></span>' + esc(sv.color) + '</span>') : '';
       const row1Html = '<div style="display:flex;align-items:center;gap:6px;margin-bottom:5px;flex-wrap:nowrap">'
-        + '<div style="font-size:14px;font-weight:500;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;min-width:0">' + typeEmoji + '<span style="text-decoration:underline">' + esc(sv.name) + '</span></div>'
+        + '<div style="display:flex;align-items:center;gap:5px;font-size:14px;font-weight:500;color:var(--text);flex:1;min-width:0;overflow:hidden">'
+        + '<span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0">' + typeEmoji + '<span style="text-decoration:underline">' + esc(sv.name) + '</span></span>'
         + colorChipHtml
+        + '</div>'
         + tagsHtml
         + '<div style="display:flex;gap:3px;flex-shrink:0;align-items:center;">' + actions + '</div>'
         + '<div style="font-size:11px;color:var(--text3);white-space:nowrap;flex-shrink:0">' + ds + '</div>'
@@ -9125,22 +9134,6 @@ CC&lt;={幸運} 【幸運】</div>
       try {
         if (savedToken) await downloadFromCloud();
         if (sharedToken) await downloadFromShared();
-      } catch { }
-    })();
-
-    // 起動時にタグ順をクラウドから取得（共有優先、なければ個人）
-    (async () => {
-      try {
-        if (savedSToken && savedSGist) {
-          const sd = await sharedGistGet();
-          if (sd) loadTagOrder(sd);
-        } else if (savedToken) {
-          const pd = await gistGet();
-          if (pd) loadTagOrder(pd);
-        }
-        renderTagFilterBar('tag-filter-bar-stat-top', getStatTags(), _statTagFilter, setStatTagFilter);
-        renderTagFilterBar('tag-filter-bar-personal', getPersonalTags(), _personalTagFilter, setPersonalTagFilter);
-        renderTagFilterBar('tag-filter-bar-koma', getKomaTags(), _komaTagFilter, setKomaTagFilter);
       } catch { }
     })();
 
