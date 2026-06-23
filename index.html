@@ -8559,19 +8559,22 @@ function bindSaveListEvents(wrap) {
               // save  タブ(both): ステータス＋コマ両方更新
               let freshBoth;
               if (callerTab === 'stats') {
-                // ステータスタブのみ上書き：コマデータは既存のものを維持
+                // ステータスタブのみ上書き：コマデータ・種別は既存を完全保持
                 const statData = getCurrentData({ includeKoma: false });
                 freshBoth = {
                   ...statData,
-                  komaData: existing?.komaData ?? undefined,
-                  _isKoma: existing?._isKoma ?? undefined,
+                  komaData: existing?.komaData,
+                  _isKoma: existing?._isKoma,
+                  type: existing?.type,
                 };
               } else if (callerTab === 'koma') {
-                // コマタブのみ上書き：ステータスデータは既存のものを維持
+                // コマタブのみ上書き：既存データを基底にコマ部分だけ差し替え、種別は必ず保持
                 const komaData = getCurrentKomaData();
                 freshBoth = {
                   ...existing,
-                  komaData,
+                  komaData: komaData,
+                  _isKoma: existing?._isKoma,
+                  type: existing?.type,
                   savedAt: new Date().toISOString(),
                 };
               } else {
