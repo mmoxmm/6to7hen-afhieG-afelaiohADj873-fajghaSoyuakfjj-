@@ -8262,14 +8262,14 @@
             const komaLine = '<div style="border-top:1px solid var(--border2);margin:3px 0;"></div>';
 
             // ---- 1行目：名前 + タグ + ボタン + 日付 ----
-            const colorChipHtml = sv.color ? ('<span style="display:inline-flex;align-items:center;gap:3px;font-size:11px;color:var(--text3);flex-shrink:0;white-space:nowrap"><span style="width:12px;height:12px;border-radius:3px;border:0.5px solid var(--border2);background:' + esc(sv.color) + ';display:inline-block;flex-shrink:0"></span>' + esc(sv.color) + '</span>') : '';
+            const colorChipHtml = sv.color ? ('<span style="display:inline-flex;align-items:center;gap:2px;font-size:11px;color:var(--text3);flex-shrink:0;white-space:nowrap;vertical-align:middle;position:relative;top:0"><span style="width:10px;height:10px;border-radius:2px;border:0.5px solid var(--border2);background:' + esc(sv.color) + ';display:inline-block;flex-shrink:0;position:relative;top:0"></span>' + esc(sv.color) + '</span>') : '';
             // bothカードはステータスタブ名を正とし、コマ名が異なる場合は（コマ名）を付加
             // bothカード：コマ名はkomaData.nameを正として、ステータス名と異なれば（コマ名）を付加
             const komaName = (kind === 'both' && sv.komaData) ? (sv.komaData.name || '') : '';
             const komaSubName = (kind === 'both' && komaName && komaName !== '（名称なし）' && komaName !== sv.name)
                 ? '<span style="font-size:12px;color:var(--text3);font-weight:400">（' + esc(komaName) + '）</span>' : '';
             const row1Html = '<div style="display:flex;align-items:center;gap:6px;margin-bottom:5px;flex-wrap:nowrap">'
-                + '<div style="display:flex;align-items:center;gap:5px;font-size:14px;font-weight:500;color:var(--text);flex:1;min-width:0;overflow:hidden">'
+                + '<div style="display:flex;align-items:baseline;gap:5px;font-size:14px;font-weight:500;color:var(--text);flex:1;min-width:0;overflow:hidden">'
                 + '<span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0">' + typeEmoji + '<span style="text-decoration:underline">' + esc(sv.name) + '</span>' + komaSubName + '</span>'
                 + colorChipHtml
                 + '</div>'
