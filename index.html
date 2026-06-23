@@ -3038,7 +3038,13 @@ CC&lt;={幸運} 【幸運】</div>
             <!-- 自動タブ -->
             <div id="koma-panel-auto">
               <div
-                style="display:flex;gap:8px;align-items:center;margin-bottom:6px;padding:4px 6px;background:var(--bg2);border-radius:var(--radius);border:0.5px solid var(--border);">
+                style="display:flex;flex-direction:column;gap:3px;margin-bottom:6px;padding:4px 6px;background:var(--bg2);border-radius:var(--radius);border:0.5px solid var(--border);">
+                <label
+                  style="display:flex;align-items:center;gap:4px;cursor:pointer;font-size:12px;color:var(--text2);">
+                  <input type="checkbox" id="koma-chk-no-palette" onchange="updateKomaJsonPreview()"
+                    style="cursor:pointer;accent-color:var(--accent);width:13px;height:13px;">
+                  チャットパレットへ反映しない
+                </label>
                 <label
                   style="display:flex;align-items:center;gap:4px;cursor:pointer;font-size:12px;color:var(--text2);">
                   <input type="checkbox" id="koma-chk-show-status" onchange="renderKomaPalettePreview()"
@@ -4564,6 +4570,8 @@ CC&lt;={幸運} 【幸運】</div>
       const isHideChatCharacter = document.getElementById('koma-hide-chat')?.checked || document.getElementById('chk-hide-chat-char')?.checked || document.getElementById('chk-hide-chat-char2')?.checked || false;
       const invisible = document.getElementById('koma-invisible')?.checked || document.getElementById('chk-invisible')?.checked || document.getElementById('chk-invisible2')?.checked || false;
 
+      const noPalette = document.getElementById('koma-chk-no-palette')?.checked || false;
+
       return {
         kind: 'character',
         data: {
@@ -4572,7 +4580,7 @@ CC&lt;={幸運} 【幸運】</div>
           initiative: vals.dex || 0,
           status,
           params,
-          commands: paletteText,
+          commands: noPalette ? '' : paletteText,
           faces,
           color: (document.getElementById("npc-color")?.value || "").trim() || "#888888",
           secret: isHideStatus,
@@ -5313,7 +5321,8 @@ CC&lt;={幸運} 【幸運】</div>
         paletteMode: document.querySelector('input[name="palette-mode"]:checked, input[name="palette-mode2"]:checked, input[name="palette-mode3"]:checked')?.value || 'auto',
         cmdOrder: document.querySelector('input[name="cmd-order"]:checked, input[name="cmd-order2"]:checked, input[name="cmd-order3"]:checked')?.value || 'sk-first',
         bothDb: document.getElementById('chk-both-db')?.checked || document.getElementById('chk-both-db2')?.checked || document.getElementById('chk-both-db3')?.checked || false,
-        useV6: document.getElementById('chk-use-v6')?.checked || document.getElementById('chk-use-v6-2')?.checked || document.getElementById('chk-use-v6-3')?.checked || false
+        useV6: document.getElementById('chk-use-v6')?.checked || document.getElementById('chk-use-v6-2')?.checked || document.getElementById('chk-use-v6-3')?.checked || false,
+        noPalette: document.getElementById('koma-chk-no-palette')?.checked || false
       };
     }
 
@@ -5341,6 +5350,8 @@ CC&lt;={幸運} 【幸運】</div>
       document.querySelectorAll('input[name="cmd-order"], input[name="cmd-order2"], input[name="cmd-order3"]').forEach(el => el.checked = el.value === co);
       if (s.bothDb !== undefined) { ['chk-both-db', 'chk-both-db2', 'chk-both-db3'].forEach(id => { const el = document.getElementById(id); if (el) el.checked = !!s.bothDb; }); }
       if (s.useV6 !== undefined) { ['chk-use-v6', 'chk-use-v6-2', 'chk-use-v6-3'].forEach(id => { const el = document.getElementById(id); if (el) el.checked = !!s.useV6; }); }
+      const noPaletteEl = document.getElementById('koma-chk-no-palette');
+      if (noPaletteEl) noPaletteEl.checked = !!s.noPalette;
     }
     let _hideChatChar = false;
     let _invisible = false;
@@ -6576,6 +6587,9 @@ CC&lt;={幸運} 【幸運】</div>
       const kmDraftFull = document.getElementById("koma-manual-draft");
       if (kmDraftFull) kmDraftFull.value = "";
       try { localStorage.removeItem("coc_koma_manual_draft"); } catch { }
+      const noPaletteReset = document.getElementById('koma-chk-no-palette');
+      if (noPaletteReset) noPaletteReset.checked = false;
+      updateKomaJsonPreview();
       updateStatDisplay(); showToast("リセットしました");
     }
 
@@ -8146,11 +8160,14 @@ CC&lt;={幸運} 【幸運】</div>
           const prN2 = (kd.paramList || []).filter(p => !p._sep && p.label).length;
           const total = lbls + stN2 + prN2;
           const kc = (t, v) => chip('var(--bg2)', 'var(--text2)', 'var(--border2)', t + ' <strong style="color:var(--text);font-weight:700">' + v + '</strong>');
-          // 4行目：コマ内訳 + 合計（右端コントロールなし）
+          // 4行目：コマ内訳 + 合計 + コマ非表示チェック（3列目）
+          const hideKomaId = 'cb-hide-koma-' + sv.id;
+          const hideKomaChecked = sv.hideKoma ? ' checked' : '';
+          const hideKomaChk = '<label style="display:inline-flex;align-items:center;gap:2px;height:20px;cursor:pointer;font-size:10px;color:var(--text3);white-space:nowrap;flex-shrink:0;padding:0 3px;" title="読込時にコマタブを非表示（ステータスのみ表示）"><input type="checkbox" id="' + hideKomaId + '"' + hideKomaChecked + ' style="cursor:pointer;accent-color:var(--accent);width:11px;height:11px;margin:0;">コマ非</label>';
           const komaRowLabel = '<span style="font-size:10px;font-weight:700;color:var(--text3);margin-right:3px;flex-shrink:0;">コマ</span>';
           bodyHtml += mkRow(
             komaRowLabel + kc('差分', lbls) + kc('ST', stN2) + kc('PR', prN2) + sep + chip('var(--bg2)', 'var(--text2)', 'var(--border2)', '合計 ' + total + ' 件'),
-            '',
+            hideKomaChk,
             ''
           );
         }
@@ -8469,6 +8486,23 @@ CC&lt;={幸運} 【幸運】</div>
             if (syncToken) debounceSave(async () => { await gistSet({ saves: lSaves(), mythos: { beings: customBeings, spells: customSpells }, tagOrder: _tagOrder, tagSaveOrder: _tagSaveOrder }); });
           } else if (shSv) {
             const shList = lSharedSaves().map(s => s.id === id ? { ...s, collapse: cb.checked } : s);
+            wSharedSaves(shList);
+            if (sharedToken) debounceSave(async () => { await sharedGistSet({ saves: lSharedSaves(), tagOrder: _tagOrder, tagSaveOrder: _tagSaveOrder }); });
+          }
+        });
+      });
+      // コマ非表示checkの変更をsv.hideKomaに保存してGist同期
+      wrap.querySelectorAll('input[id^="cb-hide-koma-"]').forEach(cb => {
+        cb.addEventListener("change", () => {
+          const id = +cb.id.replace("cb-hide-koma-", "");
+          const pSv = currentSaves.find(s => s.id === id);
+          const shSv = lSharedSaves().find(s => s.id === id);
+          if (pSv) {
+            pSv.hideKoma = cb.checked;
+            writeSaves(currentSaves);
+            if (syncToken) debounceSave(async () => { await gistSet({ saves: lSaves(), mythos: { beings: customBeings, spells: customSpells }, tagOrder: _tagOrder, tagSaveOrder: _tagSaveOrder }); });
+          } else if (shSv) {
+            const shList = lSharedSaves().map(s => s.id === id ? { ...s, hideKoma: cb.checked } : s);
             wSharedSaves(shList);
             if (sharedToken) debounceSave(async () => { await sharedGistSet({ saves: lSharedSaves(), tagOrder: _tagOrder, tagSaveOrder: _tagSaveOrder }); });
           }
