@@ -8142,19 +8142,18 @@ CC&lt;={幸運} 【幸運】</div>
         const hideKomaChkInDerived = hideKomaId
           ? '<label style="display:inline-flex;align-items:center;gap:2px;height:20px;cursor:pointer;font-size:10px;color:var(--text3);white-space:nowrap;flex-shrink:0;padding:0 3px;" title="コマ情報を非表示（折りたたむ）"><input type="checkbox" id="' + hideKomaId + '"' + hideKomaChecked + ' style="cursor:pointer;accent-color:var(--accent);width:11px;height:11px;margin:0;">コマ非</label>'
           : '';
-        const derivedRowCtrl = collapseChk + hideKomaChkInDerived;
         bodyHtml += mkRow(
           derivedLabel + (derivedInner || '<span style="color:var(--text3);font-size:11px">―</span>'),
-          derivedRowCtrl,
+          collapseChk,
           '3px'
         );
         // 派生と能力の間：点線
         bodyHtml += dottedLine;
-        // 3行目：能力チップ
+        // 3行目：能力チップ + コマ非（bothのみ）
         const abilLabel = '<span style="font-size:10px;font-weight:700;color:var(--text3);margin-right:3px;flex-shrink:0;">能力</span>';
         bodyHtml += mkRow(
           abilLabel + (abilInner || '<span style="color:var(--text3);font-size:11px">―</span>'),
-          '',
+          hideKomaChkInDerived,
           kind === 'both' && sv.komaData ? '3px' : ''
         );
 
