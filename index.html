@@ -8163,13 +8163,14 @@ CC&lt;={幸運} 【幸運】</div>
           // 4行目：コマ内訳 + 合計 + コマ非表示チェック（3列目）
           const hideKomaId = 'cb-hide-koma-' + sv.id;
           const hideKomaChecked = sv.hideKoma ? ' checked' : '';
-          const hideKomaChk = '<label style="display:inline-flex;align-items:center;gap:2px;height:20px;cursor:pointer;font-size:10px;color:var(--text3);white-space:nowrap;flex-shrink:0;padding:0 3px;" title="読込時にコマタブを非表示（ステータスのみ表示）"><input type="checkbox" id="' + hideKomaId + '"' + hideKomaChecked + ' style="cursor:pointer;accent-color:var(--accent);width:11px;height:11px;margin:0;">コマ非</label>';
+          const komaRowWrapperId = 'koma-row-wrap-' + sv.id;
+          const hideKomaChk = '<label style="display:inline-flex;align-items:center;gap:2px;height:20px;cursor:pointer;font-size:10px;color:var(--text3);white-space:nowrap;flex-shrink:0;padding:0 3px;" title="コマ情報を非表示（折りたたむ）"><input type="checkbox" id="' + hideKomaId + '"' + hideKomaChecked + ' style="cursor:pointer;accent-color:var(--accent);width:11px;height:11px;margin:0;">コマ非</label>';
           const komaRowLabel = '<span style="font-size:10px;font-weight:700;color:var(--text3);margin-right:3px;flex-shrink:0;">コマ</span>';
-          bodyHtml += mkRow(
-            komaRowLabel + kc('差分', lbls) + kc('ST', stN2) + kc('PR', prN2) + sep + chip('var(--bg2)', 'var(--text2)', 'var(--border2)', '合計 ' + total + ' 件'),
-            hideKomaChk,
-            ''
-          );
+          const komaRowContent = komaRowLabel + kc('差分', lbls) + kc('ST', stN2) + kc('PR', prN2) + sep + chip('var(--bg2)', 'var(--text2)', 'var(--border2)', '合計 ' + total + ' 件');
+          const komaRowDisplay = sv.hideKoma ? 'display:none;' : '';
+          bodyHtml += '<div id="' + komaRowWrapperId + '" style="' + komaRowDisplay + '">'
+            + mkRow(komaRowContent, hideKomaChk, '')
+            + '</div>';
         }
       }
 
@@ -8179,7 +8180,13 @@ CC&lt;={幸運} 【幸運】</div>
         + '</div>';
     }
 
-    function bindSaveListEvents(wrap) {
+    function toggleKomaRowVisibility(chk) {
+  const id = chk.id.replace('cb-hide-koma-', '');
+  const wrapEl = document.getElementById('koma-row-wrap-' + id);
+  if (wrapEl) wrapEl.style.display = chk.checked ? 'none' : '';
+}
+
+function bindSaveListEvents(wrap) {
       // タグチップ：クリック=フィルター、ダブルタップ=削除確認ポップアップ
       wrap.querySelectorAll("[data-tag-filter]").forEach(el => {
         let lastTap = 0;
@@ -8494,6 +8501,8 @@ CC&lt;={幸運} 【幸運】</div>
       // コマ非表示checkの変更をsv.hideKomaに保存してGist同期
       wrap.querySelectorAll('input[id^="cb-hide-koma-"]').forEach(cb => {
         cb.addEventListener("change", () => {
+          const wrapDiv = document.getElementById('koma-row-wrap-' + cb.id.replace('cb-hide-koma-', ''));
+          if (wrapDiv) wrapDiv.style.display = cb.checked ? 'none' : '';
           const id = +cb.id.replace("cb-hide-koma-", "");
           const pSv = currentSaves.find(s => s.id === id);
           const shSv = lSharedSaves().find(s => s.id === id);
