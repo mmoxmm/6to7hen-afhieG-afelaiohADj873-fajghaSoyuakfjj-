@@ -2367,13 +2367,19 @@
             <span id="mode-hint" style="font-size:11px;color:var(--text3)">6版値→7版%に自動変換</span>
         </div>
         <div style="display:flex;gap:4px;align-items:center;margin-bottom:5px">
-            <div class="inp-wrap" id="w-npcname" style="flex:2"><input type="text" id="npc-name"
-                    placeholder="NPC / モンスター名..."><button class="inp-clear"
-                    onclick="clrInp('npc-name','w-npcname')">×</button>
+            <div style="display:flex;align-items:center;gap:3px;flex:2">
+                <div class="inp-wrap" id="w-npcname" style="flex:1"><input type="text" id="npc-name"
+                        placeholder="NPC / モンスター名..."><button class="inp-clear"
+                        onclick="clrInp('npc-name','w-npcname')">×</button>
+                </div>
+                <button onclick="navigator.clipboard.readText().then(t=>{const el=document.getElementById('npc-name');el.value=t.trim();document.getElementById('w-npcname').classList.toggle('hv',!!el.value);el.dispatchEvent(new Event('input'));updateExport();updateSecretCmdPreview();})" style="background:none;border:0.5px solid var(--border2);border-radius:var(--radius);color:var(--text3);cursor:pointer;font-size:12px;padding:4px 6px;white-space:nowrap;flex-shrink:0" title="クリップボードから貼り付け">📋</button>
             </div>
-            <div class="inp-wrap" id="w-npccolor" style="flex:1"><input type="text" id="npc-color" maxlength="7"
-                    placeholder="#888888" style="color:#000;background:#888888"><button class="inp-clear"
-                    onclick="clrInp('npc-color','w-npccolor')">×</button>
+            <div style="display:flex;align-items:center;gap:3px;flex:1">
+                <div class="inp-wrap" id="w-npccolor" style="flex:1"><input type="text" id="npc-color" maxlength="7"
+                        placeholder="#888888" style="color:#000;background:#888888"><button class="inp-clear"
+                        onclick="clrInp('npc-color','w-npccolor')">×</button>
+                </div>
+                <button onclick="navigator.clipboard.readText().then(t=>{const el=document.getElementById('npc-color');const v=('#'+t.trim().replace(/#/g,'')).slice(0,7);el.value=v;document.getElementById('w-npccolor').classList.toggle('hv',!!el.value);el.dispatchEvent(new Event('input'));updateNpcColorPreview();updateExport();})" style="background:none;border:0.5px solid var(--border2);border-radius:var(--radius);color:var(--text3);cursor:pointer;font-size:12px;padding:4px 6px;white-space:nowrap;flex-shrink:0" title="クリップボードから貼り付け">📋</button>
             </div>
             <button onclick="fullReset()"
                 style="background:none;border:0.5px solid var(--border2);border-radius:var(--radius);color:var(--text3);cursor:pointer;font-size:12px;padding:5px 7px;white-space:nowrap;flex-shrink:0">全リセット</button>
@@ -2992,6 +2998,7 @@
                                     style="background:var(--bg2);border-color:var(--border2)">
                                 <button class="inp-clear" onclick="clrInp('koma-name','w-komaname')">×</button>
                             </div>
+                        <button onclick="navigator.clipboard.readText().then(t=>{const el=document.getElementById('koma-name');el.value=t.trim();document.getElementById('w-komaname').classList.toggle('hv',!!el.value);el.dispatchEvent(new Event('input'));renderKomaPalettePreview();updateKomaJsonPreview();updateSecretCmdPreview();})" style="background:none;border:0.5px solid var(--border2);border-radius:var(--radius);color:var(--text3);cursor:pointer;font-size:12px;padding:4px 6px;white-space:nowrap;flex-shrink:0" title="クリップボードから貼り付け">📋</button>
                         </div>
                     </div>
                 </div>
@@ -3099,6 +3106,10 @@
                             <span class="acc-title">🎮 パレットプレビュー</span>
                             <span style="font-size:11px;color:var(--text3);margin-left:4px">タップでコピー</span>
                         </div>
+                        <label onclick="event.stopPropagation()" style="display:flex;align-items:center;gap:4px;cursor:pointer;font-size:12px;color:var(--danger);white-space:nowrap;margin-right:6px;user-select:none">
+                            <input type="checkbox" id="koma-chk-no-palette" onchange="onNoPaletteChange()" style="cursor:pointer;accent-color:var(--danger);width:13px;height:13px;">
+                            チャットパレットに反映しない
+                        </label>
                         <span class="acc-arrow open" id="arrow-koma-palette">▼</span>
                     </div>
                     <div class="acc-body open" id="body-koma-palette">
@@ -3119,12 +3130,6 @@
                                 style="display:flex;flex-direction:row;flex-wrap:nowrap;gap:8px;margin-bottom:6px;padding:4px 8px;background:var(--bg2);border-radius:var(--radius);border:0.5px solid var(--border);align-items:center;">
                                 <label
                                     style="display:flex;align-items:center;gap:4px;cursor:pointer;font-size:12px;color:var(--text2);white-space:nowrap;">
-                                    <input type="checkbox" id="koma-chk-no-palette" onchange="updateKomaJsonPreview()"
-                                        style="cursor:pointer;accent-color:var(--accent);width:13px;height:13px;">
-                                    パレット反映しない
-                                </label>
-                                <label
-                                    style="display:flex;align-items:center;gap:4px;cursor:pointer;font-size:12px;color:var(--text2);white-space:nowrap;">
                                     <input type="checkbox" id="koma-chk-show-status"
                                         onchange="renderKomaPalettePreview()"
                                         style="cursor:pointer;accent-color:var(--accent);width:13px;height:13px;">
@@ -3140,13 +3145,11 @@
                             </div>
                             <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-bottom:4px">
                                 <div>
-                                    <div style="font-size:11px;font-weight:700;color:var(--text3);margin-bottom:2px">
-                                        シンプル型</div>
+                                    <div style="font-size:11px;font-weight:700;color:var(--text3);margin-bottom:2px">シンプル型</div>
                                     <div class="koma-preview-block" id="koma-preview-simple"></div>
                                 </div>
                                 <div>
-                                    <div style="font-size:11px;font-weight:700;color:var(--text3);margin-bottom:2px">
-                                        コマ名付き型</div>
+                                    <div style="font-size:11px;font-weight:700;color:var(--text3);margin-bottom:2px">コマ名付き型</div>
                                     <div class="koma-preview-block" id="koma-preview-named"></div>
                                 </div>
                             </div>
@@ -4716,6 +4719,21 @@
             el.textContent = JSON.stringify(_buildKomaJsonObj());
         }
 
+        function onNoPaletteChange() {
+            const noPalette = document.getElementById('koma-chk-no-palette')?.checked || false;
+            // TRUE時はパレットプレビューブロックを折りたたむ
+            const body = document.getElementById('body-koma-palette');
+            const arrow = document.getElementById('arrow-koma-palette');
+            if (noPalette) {
+                body?.classList.remove('open');
+                arrow?.classList.remove('open');
+            } else {
+                body?.classList.add('open');
+                arrow?.classList.add('open');
+            }
+            updateKomaJsonPreview();
+        }
+
         function _buildKomaJsonObj() {
             const name = document.getElementById('koma-name')?.value || 'コマ';
             const paletteText = getKomaPaletteText();
@@ -5548,7 +5566,7 @@
             if (s.bothDb !== undefined) { ['chk-both-db', 'chk-both-db2', 'chk-both-db3'].forEach(id => { const el = document.getElementById(id); if (el) el.checked = !!s.bothDb; }); }
             if (s.useV6 !== undefined) { ['chk-use-v6', 'chk-use-v6-2', 'chk-use-v6-3'].forEach(id => { const el = document.getElementById(id); if (el) el.checked = !!s.useV6; }); }
             const noPaletteEl = document.getElementById('koma-chk-no-palette');
-            if (noPaletteEl) noPaletteEl.checked = !!s.noPalette;
+            if (noPaletteEl) { noPaletteEl.checked = !!s.noPalette; onNoPaletteChange(); }
             const showStatusEl = document.getElementById('koma-chk-show-status');
             if (showStatusEl) showStatusEl.checked = !!s.showStatus;
             const showParamEl = document.getElementById('koma-chk-show-param');
