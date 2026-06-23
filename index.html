@@ -5102,32 +5102,28 @@ CC&lt;={幸運} 【幸運】</div>
 
     function overwriteKomaData(id, isShared) {
       const name = (document.getElementById("koma-name")?.value || "").trim() || "（名称なし）";
-      const fresh = {
-        _isKoma: true,
-        id,
-        name,
-        savedAt: new Date().toISOString(),
+      // コマタブの内容だけ抽出（ステータス情報は含まない）
+      const komaOnly = {
         globalAt: currentKoma.globalAt,
         labels: JSON.parse(JSON.stringify(currentKoma.labels)),
         statusList: JSON.parse(JSON.stringify(currentKoma.statusList || [])),
         paramList: JSON.parse(JSON.stringify(currentKoma.paramList || [])),
         manualPalette: currentKoma.manualPalette || "",
         memoList: JSON.parse(JSON.stringify(currentKoma.memoList || [])),
-        settings: getSettings()
       };
       if (isShared) {
         const shared = lSharedSaves();
         const idx = shared.findIndex(k => k.id === id);
         if (idx < 0) return;
         const existing = shared[idx];
-        // 既存のステータスデータ（vals/ov等）を保持してコマデータのみ上書き
-        const merged = { ...existing, ...fresh };
-        if (existing.vals) merged.vals = existing.vals;
-        if (existing.ov) merged.ov = existing.ov;
-        if (existing.ovManual) merged.ovManual = existing.ovManual;
-        if (existing.skList) merged.skList = existing.skList;
-        if (existing.atkList) merged.atkList = existing.atkList;
-        if (existing.dmgLabel) merged.dmgLabel = existing.dmgLabel;
+        // 既存データを土台にコマ関連フィールドだけ上書き（_isKoma/type等は既存を維持）
+        const merged = {
+          ...existing,
+          ...komaOnly,
+          komaData: komaOnly,
+          name,
+          savedAt: new Date().toISOString(),
+        };
         shared[idx] = merged;
         wSharedSaves(shared);
         renderSharedList(); renderKomaSaveList(); renderStatSaveList();
@@ -5138,13 +5134,14 @@ CC&lt;={幸運} 【幸運】</div>
         const idx = allSaves.findIndex(k => k.id === id);
         if (idx < 0) return;
         const existing = allSaves[idx];
-        const merged = { ...existing, ...fresh };
-        if (existing.vals) merged.vals = existing.vals;
-        if (existing.ov) merged.ov = existing.ov;
-        if (existing.ovManual) merged.ovManual = existing.ovManual;
-        if (existing.skList) merged.skList = existing.skList;
-        if (existing.atkList) merged.atkList = existing.atkList;
-        if (existing.dmgLabel) merged.dmgLabel = existing.dmgLabel;
+        // 既存データを土台にコマ関連フィールドだけ上書き（_isKoma/type等は既存を維持）
+        const merged = {
+          ...existing,
+          ...komaOnly,
+          komaData: komaOnly,
+          name,
+          savedAt: new Date().toISOString(),
+        };
         allSaves[idx] = merged;
         writeSaves(allSaves);
         currentSaves = lSaves();
@@ -8549,33 +8546,22 @@ function bindSaveListEvents(wrap) {
             close();
 
             if (isKoma) {
+              // コマタブからの上書き：overwriteKomaDataで既存土台のままコマのみ更新
               overwriteKomaData(id, isShared);
             } else {
-              // 保存タブからの上書き：ステータス＋コマ両方更新
               const existing = (isShared ? lSharedSaves() : currentSaves).find(s => s.id === id);
-              // タブごとに上書き対象を限定する
-              // stats タブ: ステータス情報のみ更新、コマデータは既存を保持
-              // koma  タブ: コマデータのみ更新、ステータス情報は既存を保持
-              // save  タブ(both): ステータス＋コマ両方更新
               let freshBoth;
               if (callerTab === 'stats') {
-                // ステータスタブのみ上書き：コマデータ・種別は既存を完全保持
+                // ステータスタブのみ上書き：既存データを土台にステータス部分だけ差し替え
                 const statData = getCurrentData({ includeKoma: false });
                 freshBoth = {
-                  ...statData,
-                  komaData: existing?.komaData,
-                  _isKoma: existing?._isKoma,
-                  type: existing?.type,
-                };
-              } else if (callerTab === 'koma') {
-                // コマタブのみ上書き：既存データを基底にコマ部分だけ差し替え、種別は必ず保持
-                const komaData = getCurrentKomaData();
-                freshBoth = {
                   ...existing,
-                  komaData: komaData,
-                  _isKoma: existing?._isKoma,
-                  type: existing?.type,
-                  savedAt: new Date().toISOString(),
+                  ...statData,
+                  id: existing.id,
+                  komaData: existing.komaData,
+                  _isKoma: existing._isKoma,
+                  type: existing.type,
+                  tags: existing.tags,
                 };
               } else {
                 // saveタブ(both)：ステータス＋コマ両方更新
