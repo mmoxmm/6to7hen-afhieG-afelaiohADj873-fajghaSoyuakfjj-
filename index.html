@@ -2365,8 +2365,11 @@
       <span id="mode-hint" style="font-size:11px;color:var(--text3)">6版値→7版%に自動変換</span>
     </div>
     <div style="display:flex;gap:4px;align-items:center;margin-bottom:5px">
-      <div class="inp-wrap" id="w-npcname" style="flex:1"><input type="text" id="npc-name"
+      <div class="inp-wrap" id="w-npcname" style="flex:2"><input type="text" id="npc-name"
           placeholder="NPC / モンスター名..."><button class="inp-clear" onclick="clrInp('npc-name','w-npcname')">×</button>
+      </div>
+      <div class="inp-wrap" id="w-npccolor" style="flex:1"><input type="text" id="npc-color" maxlength="7"
+          placeholder="#888888" style="color:#000;background:#888888"><button class="inp-clear" onclick="clrInp('npc-color','w-npccolor')">×</button>
       </div>
       <button onclick="fullReset()"
         style="background:none;border:0.5px solid var(--border2);border-radius:var(--radius);color:var(--text3);cursor:pointer;font-size:12px;padding:5px 7px;white-space:nowrap;flex-shrink:0">全リセット</button>
@@ -4571,6 +4574,7 @@ CC&lt;={幸運} 【幸運】</div>
           params,
           commands: paletteText,
           faces,
+          color: (document.getElementById("npc-color")?.value || "").trim() || "#888888",
           secret: isHideStatus,
           hideStatus: isHideChatCharacter,
           invisible
@@ -5543,6 +5547,13 @@ CC&lt;={幸運} 【幸運】</div>
     function showToast(m, dur = 1800) { const t = document.getElementById("toast"); t.textContent = m; t.classList.add("show"); clearTimeout(t._tt); t._tt = setTimeout(() => t.classList.remove("show"), dur); }
     function clrInp(id, wid) { const el = document.getElementById(id); if (!el) return; el.value = ""; document.getElementById(wid)?.classList.remove("hv"); el.dispatchEvent(new Event("input")); }
     function watchInp(el, wrap) { if (!el || !wrap) return; const upd = () => wrap.classList.toggle("hv", el.value.trim() !== ""); el.addEventListener("input", upd); upd(); }
+    function updateNpcColorPreview() {
+      const inp = document.getElementById("npc-color");
+      if (!inp) return;
+      const val = (inp.value || "").trim();
+      inp.style.background = val || "#888888";
+      inp.style.color = "#000000";
+    }
     // 2カラムペア定義（片方を開いたとき相手も開く）
     const _accPairs = { 'atk': 'cons', 'cons': 'atk' };
 
@@ -6504,6 +6515,12 @@ CC&lt;={幸運} 【幸運】</div>
       if (!confirm("全データをリセットしますか？")) return;
       document.getElementById("npc-name").value = "";
       document.getElementById("w-npcname").classList.remove("hv");
+      const npcColorElReset = document.getElementById("npc-color");
+      if (npcColorElReset) {
+        npcColorElReset.value = "";
+        document.getElementById("w-npccolor")?.classList.remove("hv");
+        updateNpcColorPreview();
+      }
       STATS.forEach(({ key }) => { vals[key] = 0; });
       document.querySelectorAll(".sg-inp[data-key]").forEach(inp => {
         inp.value = "";
@@ -7222,6 +7239,7 @@ CC&lt;={幸運} 【幸運】</div>
     function buildCocoforiaJson(includeKoma = false, tabCtx = 'personal') {
       const _rawName = document.getElementById("npc-name").value || "NPC";
       const name = isStripEmojiOn() ? (stripEmoji(_rawName) || _rawName) : _rawName;
+      const colorVal = (document.getElementById("npc-color")?.value || "").trim() || "#888888";
       const status = [];
       const hp = getEff("hp"), mp = getEff("mp"), san = getEff("san"), luck = getEff("luck");
       if (hp > 0) status.push({ label: "HP", value: hp, max: hp });
@@ -7355,7 +7373,7 @@ CC&lt;={幸運} 【幸運】</div>
       // コマタブのfaces・status・paramsを統合（保存タブからの出力時のみ）
       if (!includeKoma) {
         while (cmdLines.length && cmdLines[cmdLines.length - 1] === '') cmdLines.pop();
-        return JSON.stringify({ kind: "character", data: { name, status, params, initiative: vals.dex || 0, commands: cmdLines.join("\n"), memo: memoLines.join("\n"), secret: isHideStatus, hideStatus: isHideChatCharacter, invisible: invisible } });
+        return JSON.stringify({ kind: "character", data: { name, status, params, initiative: vals.dex || 0, commands: cmdLines.join("\n"), memo: memoLines.join("\n"), color: colorVal, secret: isHideStatus, hideStatus: isHideChatCharacter, invisible: invisible } });
       }
       const komaFaces = [];
       const inclSep = document.getElementById('koma-incl-sep')?.checked || document.getElementById('chk-incl-sep')?.checked || false;
@@ -7421,6 +7439,7 @@ CC&lt;={幸運} 【幸運】</div>
           commands: cmdLines.join("\n"),
           memo: memoLines.join("\n"),
           faces: komaFaces,
+          color: colorVal,
           secret: isHideStatus,
           hideStatus: isHideChatCharacter,
           invisible: invisible
@@ -7680,6 +7699,7 @@ CC&lt;={幸運} 【幸運】</div>
       const data = {
         id: Date.now(),
         name: document.getElementById("npc-name").value || "（名称なし）",
+        color: document.getElementById("npc-color")?.value || "",
         savedAt: new Date().toISOString(),
         vals: { ...vals },
         ov: { hp: getEff("hp"), mp: getEff("mp"), san: getEff("san"), luck: getEff("luck") },
@@ -7708,6 +7728,12 @@ CC&lt;={幸運} 【幸運】</div>
     function loadDataIntoEditor(data, doExpand = false) {
       document.getElementById("npc-name").value = data.name === "（名称なし）" ? "" : data.name;
       document.getElementById("w-npcname").classList.toggle("hv", !!document.getElementById("npc-name").value);
+      const npcColorEl = document.getElementById("npc-color");
+      if (npcColorEl) {
+        npcColorEl.value = data.color || "";
+        document.getElementById("w-npccolor")?.classList.toggle("hv", !!npcColorEl.value);
+        updateNpcColorPreview();
+      }
       STATS.forEach(({ key }) => { vals[key] = parseInt(data.vals?.[key]) || 0; });
       document.querySelectorAll(".sg-inp[data-key]").forEach(inp => {
         const k = inp.dataset.key, v = vals[k] || 0;
@@ -7996,8 +8022,10 @@ CC&lt;={幸運} 【幸運】</div>
       const komaLine = '<div style="border-top:1px solid var(--border2);margin:3px 0;"></div>';
 
       // ---- 1行目：名前 + タグ + ボタン + 日付 ----
+      const colorChipHtml = sv.color ? ('<span style="display:inline-flex;align-items:center;gap:3px;font-size:11px;color:var(--text3);flex-shrink:0;white-space:nowrap"><span style="width:12px;height:12px;border-radius:3px;border:0.5px solid var(--border2);background:' + esc(sv.color) + ';display:inline-block;flex-shrink:0"></span>' + esc(sv.color) + '</span>') : '';
       const row1Html = '<div style="display:flex;align-items:center;gap:6px;margin-bottom:5px;flex-wrap:nowrap">'
         + '<div style="font-size:14px;font-weight:500;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;min-width:0">' + typeEmoji + '<span style="text-decoration:underline">' + esc(sv.name) + '</span></div>'
+        + colorChipHtml
         + tagsHtml
         + '<div style="display:flex;gap:3px;flex-shrink:0;align-items:center;">' + actions + '</div>'
         + '<div style="font-size:11px;color:var(--text3);white-space:nowrap;flex-shrink:0">' + ds + '</div>'
@@ -8995,6 +9023,28 @@ CC&lt;={幸運} 【幸運】</div>
         e.preventDefault();
         document.querySelector('.sg-inp[data-key="str"]')?.focus();
       });
+      watchInp(document.getElementById("npc-color"), document.getElementById("w-npccolor"));
+      const npcColorInp = document.getElementById("npc-color");
+      if (npcColorInp) {
+        npcColorInp.addEventListener("input", e => {
+          const old = e.target.value;
+          const oldPos = e.target.selectionStart;
+          const norm = old ? "#" + old.replace(/#/g, "") : "";
+          if (norm !== old) {
+            const diff = norm.length - old.length;
+            e.target.value = norm;
+            const newPos = Math.max(0, (oldPos || 0) + diff);
+            try { e.target.setSelectionRange(newPos, newPos); } catch { }
+          }
+          updateNpcColorPreview();
+          updateExport();
+        });
+        npcColorInp.addEventListener("keydown", e => {
+          if (e.key !== "Enter") return;
+          e.preventDefault();
+          document.querySelector('.sg-inp[data-key="str"]')?.focus();
+        });
+      }
       watchInp(document.getElementById("sync-key-input"), document.getElementById("w-synckey"));
       watchInp(document.getElementById("shared-token-input"), document.getElementById("w-stoken"));
       watchInp(document.getElementById("shared-gist-id-input"), document.getElementById("w-sgist"));
