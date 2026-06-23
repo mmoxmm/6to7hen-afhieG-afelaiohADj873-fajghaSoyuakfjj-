@@ -3038,24 +3038,24 @@ CC&lt;={幸運} 【幸運】</div>
             <!-- 自動タブ -->
             <div id="koma-panel-auto">
               <div
-                style="display:flex;flex-direction:column;gap:3px;margin-bottom:6px;padding:4px 6px;background:var(--bg2);border-radius:var(--radius);border:0.5px solid var(--border);">
+                style="display:flex;flex-direction:row;flex-wrap:nowrap;gap:8px;margin-bottom:6px;padding:4px 8px;background:var(--bg2);border-radius:var(--radius);border:0.5px solid var(--border);align-items:center;">
                 <label
-                  style="display:flex;align-items:center;gap:4px;cursor:pointer;font-size:12px;color:var(--text2);">
+                  style="display:flex;align-items:center;gap:4px;cursor:pointer;font-size:12px;color:var(--text2);white-space:nowrap;">
                   <input type="checkbox" id="koma-chk-no-palette" onchange="updateKomaJsonPreview()"
                     style="cursor:pointer;accent-color:var(--accent);width:13px;height:13px;">
-                  チャットパレットへ反映しない
+                  パレット反映しない
                 </label>
                 <label
-                  style="display:flex;align-items:center;gap:4px;cursor:pointer;font-size:12px;color:var(--text2);">
+                  style="display:flex;align-items:center;gap:4px;cursor:pointer;font-size:12px;color:var(--text2);white-space:nowrap;">
                   <input type="checkbox" id="koma-chk-show-status" onchange="renderKomaPalettePreview()"
                     style="cursor:pointer;accent-color:var(--accent);width:13px;height:13px;">
-                  ステータス値を表示
+                  ステータス値表示
                 </label>
                 <label
-                  style="display:flex;align-items:center;gap:4px;cursor:pointer;font-size:12px;color:var(--text2);">
+                  style="display:flex;align-items:center;gap:4px;cursor:pointer;font-size:12px;color:var(--text2);white-space:nowrap;">
                   <input type="checkbox" id="koma-chk-show-param" onchange="renderKomaPalettePreview()"
                     style="cursor:pointer;accent-color:var(--accent);width:13px;height:13px;">
-                  パラメータ値を表示
+                  パラメータ値表示
                 </label>
               </div>
               <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-bottom:4px">
@@ -8025,8 +8025,8 @@ CC&lt;={幸運} 【幸運】</div>
 
       const tags = sv.tags || [];
       const tagsHtml = '<div style="display:flex;align-items:center;gap:2px;flex-shrink:0">'
-        + tags.map(t => '<span class="tag-chip-filter" style="display:inline-flex;align-items:center;height:18px;line-height:1;padding:0 3px;border-radius:4px;background:var(--bg);border:0.5px solid var(--border2);color:var(--text2);font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;user-select:none;overflow:hidden" data-tag-filter="' + esc(t) + '" data-tag-name="' + esc(t) + '" data-id="' + sv.id + '" data-shared="' + (isShared ? 1 : 0) + '" data-caller="' + callerTab + '">' + esc(t) + '</span>').join('')
-        + '<span class="btn-tag-add" style="display:inline-flex;align-items:center;height:18px;padding:0 5px;border-radius:4px;background:var(--bg);border:0.5px dashed var(--border2);color:var(--text3);font-size:11px;cursor:pointer;white-space:nowrap" data-id="' + sv.id + '" data-shared="' + (isShared ? 1 : 0) + '">＋</span>'
+        + tags.map(t => '<span class="tag-chip-filter" style="display:inline-flex;align-items:center;height:18px;line-height:1;padding:0 5px;border-radius:4px;background:var(--bg);border:0.5px solid var(--border2);color:var(--text2);font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;user-select:none;overflow:hidden;box-sizing:border-box;" data-tag-filter="' + esc(t) + '" data-tag-name="' + esc(t) + '" data-id="' + sv.id + '" data-shared="' + (isShared ? 1 : 0) + '" data-caller="' + callerTab + '">' + esc(t) + '</span>').join('')
+        + '<span class="btn-tag-add" style="display:inline-flex;align-items:center;height:18px;padding:0 5px;border-radius:4px;background:var(--bg);border:0.5px dashed var(--border2);color:var(--text3);font-size:11px;cursor:pointer;white-space:nowrap;box-sizing:border-box;" data-id="' + sv.id + '" data-shared="' + (isShared ? 1 : 0) + '">＋</span>'
         + '</div>';
 
       // ---- レイアウトヘルパー ----
@@ -8143,41 +8143,34 @@ CC&lt;={幸運} 【幸運】</div>
         );
         // 派生と能力の間：点線
         bodyHtml += dottedLine;
-        // 3行目：能力チップ（BOTHかつkomaDataありなら右端にコマ非チェック）
+        // 3行目：能力チップ
         const abilLabel = '<span style="font-size:10px;font-weight:700;color:var(--text3);margin-right:3px;flex-shrink:0;">能力</span>';
+        bodyHtml += mkRow(
+          abilLabel + (abilInner || '<span style="color:var(--text3);font-size:11px">―</span>'),
+          '',
+          kind === 'both' && sv.komaData ? '3px' : ''
+        );
 
         if (kind === 'both' && sv.komaData) {
+          // 能力とコマの間：点線（BOTHのみ）
+          bodyHtml += komaLine;
           const kd = sv.komaData;
           const lbls = (kd.labels || []).filter(l => !l._sep && l.text).length;
           const stN2 = (kd.statusList || []).filter(s => !s._sep && s.label).length;
           const prN2 = (kd.paramList || []).filter(p => !p._sep && p.label).length;
           const total = lbls + stN2 + prN2;
           const kc = (t, v) => chip('var(--bg2)', 'var(--text2)', 'var(--border2)', t + ' <strong style="color:var(--text);font-weight:700">' + v + '</strong>');
+          // 4行目：コマ内訳 + 合計 + コマ非表示チェック（3列目）
           const hideKomaId = 'cb-hide-koma-' + sv.id;
           const hideKomaChecked = sv.hideKoma ? ' checked' : '';
           const komaRowWrapperId = 'koma-row-wrap-' + sv.id;
-          const hideKomaChk = '<label style="display:inline-flex;align-items:center;gap:2px;height:20px;cursor:pointer;font-size:10px;color:var(--text3);white-space:nowrap;flex-shrink:0;padding:0 3px;" title="コマ情報を折りたたむ"><input type="checkbox" id="' + hideKomaId + '"' + hideKomaChecked + ' style="cursor:pointer;accent-color:var(--accent);width:11px;height:11px;margin:0;">コマ非</label>';
-          // 能力値行の右端にコマ非チェック
-          bodyHtml += mkRow(
-            abilLabel + (abilInner || '<span style="color:var(--text3);font-size:11px">―</span>'),
-            hideKomaChk,
-            '3px'
-          );
-          // 能力とコマの間：点線
-          bodyHtml += komaLine;
+          const hideKomaChk = '<label style="display:inline-flex;align-items:center;gap:2px;height:20px;cursor:pointer;font-size:10px;color:var(--text3);white-space:nowrap;flex-shrink:0;padding:0 3px;" title="コマ情報を非表示（折りたたむ）"><input type="checkbox" id="' + hideKomaId + '"' + hideKomaChecked + ' style="cursor:pointer;accent-color:var(--accent);width:11px;height:11px;margin:0;">コマ非</label>';
           const komaRowLabel = '<span style="font-size:10px;font-weight:700;color:var(--text3);margin-right:3px;flex-shrink:0;">コマ</span>';
           const komaRowContent = komaRowLabel + kc('差分', lbls) + kc('ST', stN2) + kc('PR', prN2) + sep + chip('var(--bg2)', 'var(--text2)', 'var(--border2)', '合計 ' + total + ' 件');
           const komaRowDisplay = sv.hideKoma ? 'display:none;' : '';
-          // コマ行（折りたたみ可能、チェックONで非表示）
           bodyHtml += '<div id="' + komaRowWrapperId + '" style="' + komaRowDisplay + '">'
-            + mkRow(komaRowContent, '', '')
+            + mkRow(komaRowContent, hideKomaChk, '')
             + '</div>';
-        } else {
-          bodyHtml += mkRow(
-            abilLabel + (abilInner || '<span style="color:var(--text3);font-size:11px">―</span>'),
-            '',
-            ''
-          );
         }
       }
 
@@ -8423,7 +8416,7 @@ function bindSaveListEvents(wrap) {
 
             // タグチップを＋ボタン直前に挿入
             const chip = document.createElement('span');
-            chip.style.cssText = 'display:inline-flex;align-items:center;height:18px;line-height:1;padding:0 5px;border-radius:4px;background:var(--bg);border:0.5px solid var(--border2);color:var(--text2);font-size:11px;font-weight:700;white-space:nowrap;user-select:none;overflow:hidden;margin:1px 1px;cursor:default;';
+            chip.style.cssText = 'display:inline-flex;align-items:center;height:18px;line-height:1;padding:0 5px;border-radius:4px;background:var(--bg);border:0.5px solid var(--border2);color:var(--text2);font-size:11px;font-weight:700;white-space:nowrap;user-select:none;overflow:hidden;box-sizing:border-box;cursor:default;';
             chip.dataset.tagDel = tag;
             chip.dataset.id = String(id);
             chip.dataset.shared = String(isShared ? 1 : 0);
