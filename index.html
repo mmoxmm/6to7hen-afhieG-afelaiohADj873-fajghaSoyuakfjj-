@@ -8041,9 +8041,12 @@ CC&lt;={幸運} 【幸運】</div>
 
       // ---- 1行目：名前 + タグ + ボタン + 日付 ----
       const colorChipHtml = sv.color ? ('<span style="display:inline-flex;align-items:center;gap:3px;font-size:11px;color:var(--text3);flex-shrink:0;white-space:nowrap"><span style="width:12px;height:12px;border-radius:3px;border:0.5px solid var(--border2);background:' + esc(sv.color) + ';display:inline-block;flex-shrink:0"></span>' + esc(sv.color) + '</span>') : '';
+      // bothカードはステータスタブ名を正とし、コマ名が異なる場合は（コマ名）を付加
+      const komaSubName = (kind === 'both' && sv.komaData && sv.komaData.name && sv.komaData.name !== '（名称なし）' && sv.komaData.name !== sv.name)
+        ? '<span style="font-size:12px;color:var(--text3);font-weight:400">（' + esc(sv.komaData.name) + '）</span>' : '';
       const row1Html = '<div style="display:flex;align-items:center;gap:6px;margin-bottom:5px;flex-wrap:nowrap">'
         + '<div style="display:flex;align-items:center;gap:5px;font-size:14px;font-weight:500;color:var(--text);flex:1;min-width:0;overflow:hidden">'
-        + '<span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0">' + typeEmoji + '<span style="text-decoration:underline">' + esc(sv.name) + '</span></span>'
+        + '<span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0">' + typeEmoji + '<span style="text-decoration:underline">' + esc(sv.name) + '</span>' + komaSubName + '</span>'
         + colorChipHtml
         + '</div>'
         + tagsHtml
@@ -8131,11 +8134,18 @@ CC&lt;={幸運} 【幸運】</div>
         if (abilInner && rightChips) abilInner += sep;
         abilInner += rightChips;
 
-        // 2行目：派生チップ + 閉じる
+        // 2行目：派生チップ + 閉じる + コマ非（bothのみ）
         const derivedLabel = '<span style="font-size:10px;font-weight:700;color:var(--text3);margin-right:3px;flex-shrink:0;">派生</span>';
+        // bothカード：コマ非チェックを派生行右端に置く（コマ行が非表示でも操作できるように）
+        const hideKomaId = kind === 'both' && sv.komaData ? 'cb-hide-koma-' + sv.id : '';
+        const hideKomaChecked = sv.hideKoma ? ' checked' : '';
+        const hideKomaChkInDerived = hideKomaId
+          ? '<label style="display:inline-flex;align-items:center;gap:2px;height:20px;cursor:pointer;font-size:10px;color:var(--text3);white-space:nowrap;flex-shrink:0;padding:0 3px;" title="コマ情報を非表示（折りたたむ）"><input type="checkbox" id="' + hideKomaId + '"' + hideKomaChecked + ' style="cursor:pointer;accent-color:var(--accent);width:11px;height:11px;margin:0;">コマ非</label>'
+          : '';
+        const derivedRowCtrl = collapseChk + hideKomaChkInDerived;
         bodyHtml += mkRow(
           derivedLabel + (derivedInner || '<span style="color:var(--text3);font-size:11px">―</span>'),
-          collapseChk,
+          derivedRowCtrl,
           '3px'
         );
         // 派生と能力の間：点線
@@ -8157,16 +8167,13 @@ CC&lt;={幸運} 【幸運】</div>
           const prN2 = (kd.paramList || []).filter(p => !p._sep && p.label).length;
           const total = lbls + stN2 + prN2;
           const kc = (t, v) => chip('var(--bg2)', 'var(--text2)', 'var(--border2)', t + ' <strong style="color:var(--text);font-weight:700">' + v + '</strong>');
-          // 4行目：コマ内訳 + 合計 + コマ非表示チェック（3列目）
-          const hideKomaId = 'cb-hide-koma-' + sv.id;
-          const hideKomaChecked = sv.hideKoma ? ' checked' : '';
+          // 4行目：コマ内訳 + 合計（コマ非チェックは派生行に移動済み）
           const komaRowWrapperId = 'koma-row-wrap-' + sv.id;
-          const hideKomaChk = '<label style="display:inline-flex;align-items:center;gap:2px;height:20px;cursor:pointer;font-size:10px;color:var(--text3);white-space:nowrap;flex-shrink:0;padding:0 3px;" title="コマ情報を非表示（折りたたむ）"><input type="checkbox" id="' + hideKomaId + '"' + hideKomaChecked + ' style="cursor:pointer;accent-color:var(--accent);width:11px;height:11px;margin:0;">コマ非</label>';
           const komaRowLabel = '<span style="font-size:10px;font-weight:700;color:var(--text3);margin-right:3px;flex-shrink:0;">コマ</span>';
           const komaRowContent = komaRowLabel + kc('差分', lbls) + kc('ST', stN2) + kc('PR', prN2) + sep + chip('var(--bg2)', 'var(--text2)', 'var(--border2)', '合計 ' + total + ' 件');
           const komaRowDisplay = sv.hideKoma ? 'display:none;' : '';
           bodyHtml += '<div id="' + komaRowWrapperId + '" style="' + komaRowDisplay + '">'
-            + mkRow(komaRowContent, hideKomaChk, '')
+            + mkRow(komaRowContent, '', '')
             + '</div>';
         }
       }
