@@ -5307,6 +5307,7 @@
                 paramList: JSON.parse(JSON.stringify(currentKoma.paramList || [])),
                 manualPalette: currentKoma.manualPalette || "",
                 memoList: JSON.parse(JSON.stringify(currentKoma.memoList || [])),
+                settings: getSettings(),
             };
             if (isShared) {
                 const shared = lSharedSaves();
@@ -5516,7 +5517,9 @@
                 cmdOrder: document.querySelector('input[name="cmd-order"]:checked, input[name="cmd-order2"]:checked, input[name="cmd-order3"]:checked')?.value || 'sk-first',
                 bothDb: document.getElementById('chk-both-db')?.checked || document.getElementById('chk-both-db2')?.checked || document.getElementById('chk-both-db3')?.checked || false,
                 useV6: document.getElementById('chk-use-v6')?.checked || document.getElementById('chk-use-v6-2')?.checked || document.getElementById('chk-use-v6-3')?.checked || false,
-                noPalette: document.getElementById('koma-chk-no-palette')?.checked || false
+                noPalette: document.getElementById('koma-chk-no-palette')?.checked || false,
+                showStatus: document.getElementById('koma-chk-show-status')?.checked || false,
+                showParam: document.getElementById('koma-chk-show-param')?.checked || false
             };
         }
 
@@ -5546,6 +5549,10 @@
             if (s.useV6 !== undefined) { ['chk-use-v6', 'chk-use-v6-2', 'chk-use-v6-3'].forEach(id => { const el = document.getElementById(id); if (el) el.checked = !!s.useV6; }); }
             const noPaletteEl = document.getElementById('koma-chk-no-palette');
             if (noPaletteEl) noPaletteEl.checked = !!s.noPalette;
+            const showStatusEl = document.getElementById('koma-chk-show-status');
+            if (showStatusEl) showStatusEl.checked = !!s.showStatus;
+            const showParamEl = document.getElementById('koma-chk-show-param');
+            if (showParamEl) showParamEl.checked = !!s.showParam;
         }
         let _hideChatChar = false;
         let _invisible = false;
