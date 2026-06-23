@@ -5320,6 +5320,7 @@
                     name: existing.name,
                     savedAt: new Date().toISOString(),
                 };
+                merged.komaData.name = komaName;
                 allSaves[idx] = merged;
                 wSharedSaves(shared);
                 renderSharedList(); renderKomaSaveList(); renderStatSaveList();
@@ -5337,6 +5338,7 @@
                     name: existing.name,
                     savedAt: new Date().toISOString(),
                 };
+                merged.komaData.name = komaName;
                 allSaves[idx] = merged;
                 writeSaves(allSaves);
                 currentSaves = lSaves();
@@ -8237,8 +8239,10 @@
             // ---- 1行目：名前 + タグ + ボタン + 日付 ----
             const colorChipHtml = sv.color ? ('<span style="display:inline-flex;align-items:center;gap:3px;font-size:11px;color:var(--text3);flex-shrink:0;white-space:nowrap"><span style="width:12px;height:12px;border-radius:3px;border:0.5px solid var(--border2);background:' + esc(sv.color) + ';display:inline-block;flex-shrink:0"></span>' + esc(sv.color) + '</span>') : '';
             // bothカードはステータスタブ名を正とし、コマ名が異なる場合は（コマ名）を付加
-            const komaSubName = (kind === 'both' && sv.komaData && sv.komaData.name && sv.komaData.name !== '（名称なし）' && sv.komaData.name !== sv.name)
-                ? '<span style="font-size:12px;color:var(--text3);font-weight:400">（' + esc(sv.komaData.name) + '）</span>' : '';
+            // bothカード：コマ名はkomaData.nameを正として、ステータス名と異なれば（コマ名）を付加
+            const komaName = (kind === 'both' && sv.komaData) ? (sv.komaData.name || '') : '';
+            const komaSubName = (kind === 'both' && komaName && komaName !== '（名称なし）' && komaName !== sv.name)
+                ? '<span style="font-size:12px;color:var(--text3);font-weight:400">（' + esc(komaName) + '）</span>' : '';
             const row1Html = '<div style="display:flex;align-items:center;gap:6px;margin-bottom:5px;flex-wrap:nowrap">'
                 + '<div style="display:flex;align-items:center;gap:5px;font-size:14px;font-weight:500;color:var(--text);flex:1;min-width:0;overflow:hidden">'
                 + '<span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0">' + typeEmoji + '<span style="text-decoration:underline">' + esc(sv.name) + '</span>' + komaSubName + '</span>'
@@ -8759,6 +8763,7 @@
                                     ...existing,
                                     ...statData,
                                     id: existing.id,
+                                    name: statData.name,
                                     komaData: existing.komaData,
                                     _isKoma: existing._isKoma,
                                     type: existing.type,
@@ -8775,8 +8780,7 @@
                                 const komaDataToKeep = callerTab === 'stats'
                                     ? (shared[idx].komaData || freshBoth.komaData)
                                     : (freshBoth.komaData || shared[idx].komaData);
-                                const merged = { ...freshBoth, id, savedAt: new Date().toISOString(), tags: shared[idx].tags, komaData: komaDataToKeep };
-                                shared[idx] = merged;
+                                const merged = { ...freshBoth, id, savedAt: new Date().toISOString(), tags: shared[idx].tags, komaData: komaDataToKeep, name: freshBoth.name };
                                 shared[idx] = merged;
                                 wSharedSaves(shared);
                                 renderSharedList(); renderKomaSaveList(); renderStatSaveList();
@@ -8793,8 +8797,7 @@
                                 const komaDataToKeep = callerTab === 'stats'
                                     ? (currentSaves[idx].komaData || freshBoth.komaData)
                                     : (freshBoth.komaData || currentSaves[idx].komaData);
-                                const merged = { ...freshBoth, id, savedAt: new Date().toISOString(), tags: currentSaves[idx].tags, komaData: komaDataToKeep };
-                                currentSaves[idx] = merged;
+                                const merged = { ...freshBoth, id, savedAt: new Date().toISOString(), tags: currentSaves[idx].tags, komaData: komaDataToKeep, name: freshBoth.name };
                                 currentSaves[idx] = merged;
                                 writeSaves(currentSaves);
                                 renderSaveList(); renderKomaSaveList(); renderStatSaveList();
