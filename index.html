@@ -8553,11 +8553,31 @@ function bindSaveListEvents(wrap) {
             } else {
               // 保存タブからの上書き：ステータス＋コマ両方更新
               const existing = (isShared ? lSharedSaves() : currentSaves).find(s => s.id === id);
-              const freshBoth = callerTab === 'stats'
-                ? { ...getCurrentData(), komaData: existing?.komaData, _isKoma: existing?._isKoma }
-                : callerTab === 'koma'
-                  ? { ...existing, ...getCurrentData({ includeKoma: true }).komaData && { komaData: getCurrentData({ includeKoma: true }).komaData } }
-                  : getCurrentData({ includeKoma: true });
+              // タブごとに上書き対象を限定する
+              // stats タブ: ステータス情報のみ更新、コマデータは既存を保持
+              // koma  タブ: コマデータのみ更新、ステータス情報は既存を保持
+              // save  タブ(both): ステータス＋コマ両方更新
+              let freshBoth;
+              if (callerTab === 'stats') {
+                // ステータスタブのみ上書き：コマデータは既存のものを維持
+                const statData = getCurrentData({ includeKoma: false });
+                freshBoth = {
+                  ...statData,
+                  komaData: existing?.komaData ?? undefined,
+                  _isKoma: existing?._isKoma ?? undefined,
+                };
+              } else if (callerTab === 'koma') {
+                // コマタブのみ上書き：ステータスデータは既存のものを維持
+                const komaData = getCurrentKomaData();
+                freshBoth = {
+                  ...existing,
+                  komaData,
+                  savedAt: new Date().toISOString(),
+                };
+              } else {
+                // saveタブ(both)：ステータス＋コマ両方更新
+                freshBoth = getCurrentData({ includeKoma: true });
+              }
               if (isShared) {
                 const shared = lSharedSaves();
                 const idx = shared.findIndex(s => s.id === id);
