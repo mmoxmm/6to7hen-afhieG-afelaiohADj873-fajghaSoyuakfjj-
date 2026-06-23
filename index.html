@@ -5297,9 +5297,10 @@
         }
 
         function overwriteKomaData(id, isShared) {
-            const name = (document.getElementById("koma-name")?.value || "").trim() || "（名称なし）";
+            const komaName = (document.getElementById("koma-name")?.value || "").trim() || "（名称なし）";
             // コマタブの内容だけ抽出（ステータス情報は含まない）
             const komaOnly = {
+                name: komaName,
                 globalAt: currentKoma.globalAt,
                 labels: JSON.parse(JSON.stringify(currentKoma.labels)),
                 statusList: JSON.parse(JSON.stringify(currentKoma.statusList || [])),
@@ -5315,7 +5316,6 @@
                 // 既存データを土台にコマ関連フィールドだけ上書き（_isKoma/type等は既存を維持）
                 const merged = {
                     ...existing,
-                    ...komaOnly,
                     komaData: komaOnly,
                     name: existing.name,
                     savedAt: new Date().toISOString(),
@@ -5333,9 +5333,8 @@
                 // 既存データを土台にコマ関連フィールドだけ上書き（_isKoma/type等は既存を維持）
                 const merged = {
                     ...existing,
-                    ...komaOnly,
                     komaData: komaOnly,
-                    name,
+                    name: existing.name,
                     savedAt: new Date().toISOString(),
                 };
                 allSaves[idx] = merged;
@@ -5344,9 +5343,9 @@
                 renderSaveList(); renderKomaSaveList(); renderStatSaveList();
                 if (syncToken) {
                     gistSet({ saves: lSaves(), mythos: { beings: customBeings, spells: customSpells } })
-                        .then(ok => showToast(ok ? "「" + name + "」のコマを上書き・同期しました" : "「" + name + "」のコマを上書きしました（同期失敗）"));
+                        .then(ok => showToast(ok ? "「" + merged.name + "」のコマを上書き・同期しました" : "「" + merged.name + "」のコマを上書きしました（同期失敗）"));
                 } else {
-                    showToast("「" + name + "」のコマを上書きしました");
+                    showToast("「" + merged.name + "」のコマを上書きしました");
                 }
             }
         }
@@ -8238,7 +8237,7 @@
             // ---- 1行目：名前 + タグ + ボタン + 日付 ----
             const colorChipHtml = sv.color ? ('<span style="display:inline-flex;align-items:center;gap:3px;font-size:11px;color:var(--text3);flex-shrink:0;white-space:nowrap"><span style="width:12px;height:12px;border-radius:3px;border:0.5px solid var(--border2);background:' + esc(sv.color) + ';display:inline-block;flex-shrink:0"></span>' + esc(sv.color) + '</span>') : '';
             // bothカードはステータスタブ名を正とし、コマ名が異なる場合は（コマ名）を付加
-            const komaSubName = (kind === 'both' && sv.komaData && sv.komaData.name && sv.komaData.name !== '（名称なし）')
+            const komaSubName = (kind === 'both' && sv.komaData && sv.komaData.name && sv.komaData.name !== '（名称なし）' && sv.komaData.name !== sv.name)
                 ? '<span style="font-size:12px;color:var(--text3);font-weight:400">（' + esc(sv.komaData.name) + '）</span>' : '';
             const row1Html = '<div style="display:flex;align-items:center;gap:6px;margin-bottom:5px;flex-wrap:nowrap">'
                 + '<div style="display:flex;align-items:center;gap:5px;font-size:14px;font-weight:500;color:var(--text);flex:1;min-width:0;overflow:hidden">'
