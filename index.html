@@ -8334,7 +8334,9 @@
                 if (mp2 > 0) derivedInner += chip('#eaf3de', '#27500a', '#c0dd97', 'MP ' + mp2);
                 if (san2 > 0) derivedInner += chip('#eeedfe', '#3c3489', '#cecbf6', 'SAN ' + san2);
                 if (luck2 > 0) derivedInner += chip('#fdf3e0', '#7a4a00', '#f5c97a', '幸運 ' + luck2);
-                if (dbLabel) derivedInner += chip('var(--bg2)', 'var(--text)', 'var(--border2)', 'DB ' + dbLabel, true);                if (dbLabel && cfChips) derivedInner += sep;
+                if (dbLabel) derivedInner += chip('var(--bg2)', 'var(--text)', 'var(--border2)', 'DB ' + dbLabel, true);
+                const _hasBeforeCustom = hp2 > 0 || mp2 > 0 || san2 > 0 || luck2 > 0 || !!dbLabel;
+                if (_hasBeforeCustom && cfChips) derivedInner += sep;
                 if (cfChips) derivedInner += cfChips;
                 if (epN > 0 || memoN > 0) {
                     derivedInner += sep;
