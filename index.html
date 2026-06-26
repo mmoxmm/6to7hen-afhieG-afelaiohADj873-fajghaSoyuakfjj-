@@ -8329,11 +8329,12 @@
 
                 // 派生行
                 let derivedInner = '';
+                const luck2 = sv.ov?.luck || 0;
                 if (hp2 > 0) derivedInner += chip('#fcebeb', '#791f1f', '#f7c1c1', 'HP ' + hp2);
                 if (mp2 > 0) derivedInner += chip('#eaf3de', '#27500a', '#c0dd97', 'MP ' + mp2);
                 if (san2 > 0) derivedInner += chip('#eeedfe', '#3c3489', '#cecbf6', 'SAN ' + san2);
-                if (dbLabel) derivedInner += chip('var(--bg2)', 'var(--text)', 'var(--border2)', 'DB ' + dbLabel, true);
-                if (dbLabel && cfChips) derivedInner += sep;
+                if (luck2 > 0) derivedInner += chip('#fdf3e0', '#7a4a00', '#f5c97a', '幸運 ' + luck2);
+                if (dbLabel) derivedInner += chip('var(--bg2)', 'var(--text)', 'var(--border2)', 'DB ' + dbLabel, true);                if (dbLabel && cfChips) derivedInner += sep;
                 if (cfChips) derivedInner += cfChips;
                 if (epN > 0 || memoN > 0) {
                     derivedInner += sep;
@@ -8757,8 +8758,15 @@
                     // ポップアップ作成
                     const overlay = document.createElement("div");
                     overlay.style.cssText = "position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9000;display:flex;align-items:center;justify-content:center;padding:20px";
-                    overlay.innerHTML = '<div style="background:var(--bg);border-radius:var(--radius-lg);padding:16px;max-width:280px;width:100%;box-shadow:0 8px 32px rgba(0,0,0,.3)">'
-                        + '<div style="font-size:15px;font-weight:700;margin-bottom:6px">\u300c' + esc(sv.name) + '\u300d\u3092\u4e0a\u66f8\u304d</div>'
+                     const _currentEditName = (document.getElementById('npc-name')?.value || '').trim() || '（名称なし）';
+                    const _komaEditName = (document.getElementById('koma-name')?.value || '').trim() || '（名称なし）';
+                    const _overwriteDisplayName = isKoma ? _komaEditName : _currentEditName;
+                    overlay.innerHTML = '<div style="background:var(--bg);border-radius:var(--radius-lg);padding:16px;max-width:300px;width:100%;box-shadow:0 8px 32px rgba(0,0,0,.3)">'
+                        + '<div style="font-size:15px;font-weight:700;margin-bottom:8px">\u4e0a\u66f8\u304d\u78ba\u8a8d</div>'
+                        + '<div style="font-size:12px;color:var(--text3);margin-bottom:4px">\u4fdd\u5b58\u30ab\u30fc\u30c9\uff08\u4e0a\u66f8\u304d\u5148\uff09</div>'
+                        + '<div style="font-size:14px;font-weight:700;color:var(--text);padding:6px 10px;background:var(--bg2);border-radius:var(--radius);border:0.5px solid var(--border2);margin-bottom:8px">\u300c' + esc(sv.name) + '\u300d</div>'
+                        + '<div style="font-size:12px;color:var(--text3);margin-bottom:4px">\u73fe\u5728\u306e\u7de8\u96c6\u5185\u5bb9\uff08\u4e0a\u66f8\u304d\u5143\uff09</div>'
+                        + '<div style="font-size:14px;font-weight:700;color:var(--accent);padding:6px 10px;background:rgba(40,85,160,0.07);border-radius:var(--radius);border:0.5px solid rgba(40,85,160,0.3);margin-bottom:10px">\u300c' + esc(_overwriteDisplayName) + '\u300d</div>'
                         + '<div style="font-size:12px;color:var(--text3);margin-bottom:12px;line-height:1.5">'
                         + (isKoma ? '\u30b3\u30de\u30bf\u30d6\u306e\u73fe\u5728\u306e\u5185\u5bb9\u3067\u4e0a\u66f8\u304d\u3057\u307e\u3059' : '\u30b9\u30c6\u30fc\u30bf\u30b9\u30bf\u30d6\u306e\u73fe\u5728\u306e\u5185\u5bb9\u3067\u4e0a\u66f8\u304d\u3057\u307e\u3059')
                         + '</div>'
