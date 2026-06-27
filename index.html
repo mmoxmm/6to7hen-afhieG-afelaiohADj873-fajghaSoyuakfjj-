@@ -2402,7 +2402,7 @@
 
             <!-- STATS TAB -->
             <div id="tab-stats">
-                 <div class="parse-block" style="margin-bottom:15px;position:sticky;top:0;z-index:20;background:var(--bg);">
+                 <div class="parse-block" style="margin-bottom:15px;position:sticky;top:0;z-index:20;background:var(--bg) !important;">
                     <div class="parse-hd" onclick="toggleParse()">
                         <div class="acc-hd-left"><span class="acc-title">📋 数値自動解析</span><span
                                 style="font-size:12px;color:var(--text3);margin-left:4px">능력치·공격·기술 일괄 적용</span></div>
@@ -6615,6 +6615,21 @@
         function addConsSep() { consumables.push({ id: nxtId++, _sep: true, label: "" }); buildConsumableRows(); openAcc("cons"); }
         function addSplSep() { splList.push({ id: nxtId++, _sep: true, label: "" }); buildSplRows(); renderPalettePreview(); }
         function updConsBadge() { const n = consumables.filter(c => c.label).length; const el = document.getElementById("badge-cons"); if (el) el.textContent = n; const el2 = document.getElementById("badge-cons2"); if (el2) el2.textContent = n; }
+        function parseCustomFields(text) {
+            // "ラベル名\t現在/最大" または "ラベル名\t現在" 形式を解析
+            const results = [];
+            const lines = text.split(/\n/);
+            const pattern = /^(.+?)\t+(\d+)(?:\/(\d+))?\s*$/;
+            lines.forEach(line => {
+                const m = normalizeNpcText(line).match(pattern);
+                if (!m) return;
+                const label = m[1].trim();
+                if (!label || /^(STR|CON|SIZ|INT|POW|DEX|APP|EDU|HP|MP|SAN|DB|CC|NPC)$/i.test(label)) return;
+                results.push({ label, value: m[2], max: m[3] || m[2] });
+            });
+            return results;
+        }
+
         function normalizeNpcText(t) { t = t.replace(/"([^"]*?)"/g, (m, inner) => inner.replace(/\n/g, ' ').replace(/\s+/g, ' ').trim());; return t.replace(/[A-Z\uff21-\uff3a]/g, c => c.charCodeAt(0) > 0xff00 ? String.fromCharCode(c.charCodeAt(0) - 0xFEE0) : c).replace(/[a-z\uff41-\uff5a]/g, c => c.charCodeAt(0) > 0xff00 ? String.fromCharCode(c.charCodeAt(0) - 0xFEE0) : c).replace(/[\uff10-\uff19]/g, c => String.fromCharCode(c.charCodeAt(0) - 0xFEE0)).replace(/\uff1a/g, ':').replace(/\uff0b/g, '+').replace(/[\uff0d\u2212]/g, '-').replace(/\u3000/g, ' ').replace(/[%\uff05]/g, '%').replace(/\uff0f/g, '/').replace(/\uff08/g, '(').replace(/\uff09/g, ')').replace(/\u3002/g, '.'); }
         function stripDB(dmgRaw) { const halfPat = /\s*\+?\s*\(?\s*(?:db|DB|dB|Db)\s*\/\s*2\s*\)?/; const hasHalf = halfPat.test(dmgRaw); if (hasHalf) return { dmg: dmgRaw.replace(/\s*\+?\s*\(?\s*(?:db|DB|dB|Db)\s*\/\s*2\s*\)?/g, "").trim(), useDB: "half" }; const hasDB = /\s*\+\s*\(?\s*(?:db|DB|dB|Db)\s*\)?/.test(dmgRaw); return { dmg: dmgRaw.replace(/\s*\+\s*\(?\s*(?:db|DB|dB|Db)\s*\)?/g, "").trim(), useDB: hasDB }; }
         function parseNpcText(text) { const t = normalizeNpcText(text); const r = { stats: {}, hp: null, mp: null, san: null, luck: null, attacks: [], skills: [], memos: [] };['STR', 'CON', 'SIZ', 'INT', 'POW', 'DEX', 'APP', 'EDU'].forEach(key => { const m = t.match(new RegExp('[^\\d]' + key + '\\s*[:= ]?\\s*(\\d+)', 'i')) || t.match(new RegExp(key + '\\s*[:= ]?\\s*(\\d+)', 'i')); if (m) r.stats[key.toLowerCase()] = parseInt(m[1]); }); const hM = t.match(/(?:\u8010\u4e45\u529b|HP)\s*[:= ]?\s*(\d+)/i); if (hM) r.hp = parseInt(hM[1]); const sM = t.match(/SAN\s*[:= ]?\s*(\d+)/i); if (sM) r.san = parseInt(sM[1]); const mM = t.match(/(?:MP|\u9b54\u529b)\s*[:= ]?\s*(\d+)/i); if (mM) r.mp = parseInt(mM[1]); const lM = t.match(/(?:\u5e78\u904b|LUK|LUCK)\s*[:= ]?\s*(\d+)/i); if (lM) r.luck = parseInt(lM[1]); const skillMap = {}; const skillLineRe = /^(.+?)[\t\u3000 ]+(\d{1,3})\s*%?\s*$/gm; let sm; while ((sm = skillLineRe.exec(t)) !== null) { const n = sm[1].trim(); const v = parseInt(sm[2]); if (n && v > 0 && n.length <= 20 && !/^(STR|CON|SIZ|INT|POW|DEX|APP|EDU|HP|MP|SAN|DB)$/i.test(n)) skillMap[n] = v; } const atkRe = /^([^\t\n]+?)\t+([^\t\n]+?)\t+([0-9]+[dD][0-9]+(?:[+\-][0-9]+(?:[dD][0-9]+)?)*(?:\+?\s*\(?\s*(?:db|DB)(?:\/\s*\d+)?\s*\)?)?)\s*$/gm; let am; while ((am = atkRe.exec(t)) !== null) { const wn = am[1].trim(), sn = am[2].trim(), dr = am[3].trim(); if (!wn || !sn) continue; const pct = skillMap[sn] || 0; const { dmg, useDB } = stripDB(dr); const combinedName = sn + (wn && wn !== sn ? "・" + wn : ""); if (!r.attacks.find(a => a.name === combinedName)) r.attacks.push({ name: combinedName, pct: String(pct), dmg, useDB, note: "" }); } const arB = /([^\s\d%(\n][^\n%(]{0,13}?)\s+(\d{1,3})%\s+([0-9]+[dD][0-9]+(?:[+\-][0-9]+(?:[dD][0-9]+)?(?:\+\s*(?:db|DB)(?:\/\s*\d+)?)?)*)/g; let mb; while ((mb = arB.exec(t)) !== null) { const n = mb[1].trim(); if (/^(STR|CON|SIZ|INT|POW|DEX|APP|EDU|HP|MP|SAN|DB|CC|NPC)$/i.test(n) || n.length > 15) continue; const { dmg, useDB } = stripDB(mb[3]); if (!r.attacks.find(a => a.name === n)) r.attacks.push({ name: n, pct: mb[2], dmg, useDB, note: "" }); } Object.entries(skillMap).forEach(([name, val]) => { if (/^(STR|CON|SIZ|INT|POW|DEX|APP|EDU|HP|MP|SAN|DB|CC|NPC)$/i.test(name)) return; if (r.attacks.find(a => a.name === name)) return; if (!r.skills.find(s => s.name === name)) r.skills.push({ name, val }); }); const srB = /([^\s\d%(\n][^\n%(]{1,12}?)\s+(\d{1,3})%/g; let ms; while ((ms = srB.exec(t)) !== null) { const n = ms[1].trim(); if (/^(STR|CON|SIZ|INT|POW|DEX|APP|EDU|HP|MP|SAN|DB|CC|NPC)$/i.test(n) || n.length > 14) continue; if (r.attacks.find(a => a.name === n)) continue; if (!r.skills.find(s => s.name === n)) r.skills.push({ name: n, val: parseInt(ms[2]) }); } const dbM = t.match(/\u30c0\u30e1\u30fc\u30b8\u30dc\u30fc\u30ca\u30b9\s*[:= ]?\s*([+\-]\s*(?:\d+[dD]\d+|\d+))/i); if (dbM) r.memos.push({ label: 'DB', content: dbM[1].replace(/\s/g, '') }); const aM = text.match(/\u88c5\u7532[\uff1a:]\s*([^\u3002\n]{1,50})/); if (aM && aM[1].trim()) r.memos.push({ label: '\u88c5\u7532', content: aM[1].trim() }); const lines2 = text.trim().split(/\n/); for (const line of lines2) { const l = line.trim(); if (!l) continue; if (/STR|CON|SIZ|INT|POW|DEX|APP|EDU|HP|MP|SAN|DB|\u88c5\u7532|\u8010\u4e45/i.test(l)) break; if (/\d+[dD]\d+|\d+[%\uff05]/.test(l)) break; if (l.length <= 30 && !/[::\uff1d=]/.test(l) && l.length > 0) { r._characterName = l.replace(/^[\u300a\u300a\u300c\uff1c<]|[\u300b\u300b\u300d\uff1e>]$/g, "").trim(); break; } } return r; }
@@ -6697,6 +6712,41 @@
                 });
                 if (!skList.length) skList = [{ id: nxtId++, name: "", val: 0 }];
                 buildSkRows();
+            }
+
+            // ----- 追加ステータス（customFields） -----
+            const parsedCf = parseCustomFields(document.getElementById("parse-input").value || "");
+            if (parsedCf.length) {
+                parsedCf.forEach(cf => {
+                    const existing = customFields.find(x => x.label === cf.label);
+                    if (existing) {
+                        // 同名ラベルがあれば現在値・最大値を更新（上書き確認なしで即時）
+                        const applyFn = () => {
+                            existing.value = cf.value;
+                            existing.max = cf.max;
+                        };
+                        const oldKey = existing.value + '/' + existing.max;
+                        const newKey = cf.value + '/' + cf.max;
+                        if (oldKey !== newKey && (existing.value || existing.max)) {
+                            conflicts.push({ type: 'cf', name: cf.label, oldVal: oldKey, newVal: newKey, apply: applyFn });
+                        } else {
+                            applyFn();
+                        }
+                    } else {
+                        // 空きスロットに追加（空きがなければ末尾に新規追加）
+                        const emptySlot = customFields.find(x => !x.label);
+                        if (emptySlot) {
+                            emptySlot.label = cf.label;
+                            emptySlot.value = cf.value;
+                            emptySlot.max = cf.max;
+                        } else {
+                            customFields.push({ id: 'cf' + (customFields.length + 1), label: cf.label, value: cf.value, max: cf.max });
+                        }
+                    }
+                });
+                saveCustomFields();
+                buildCustomFieldRows();
+                updateExport();
             }
 
             if (p.memos.length) {
