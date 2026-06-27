@@ -5883,7 +5883,7 @@
         function switchConsSplTab(tab) { const bc = document.getElementById("cstab-btn-cons"); const bs = document.getElementById("cstab-btn-spl"); if (bc) { bc.style.borderBottomColor = tab === "cons" ? "var(--accent)" : "transparent"; bc.style.color = tab === "cons" ? "var(--text)" : "var(--text3)"; } if (bs) { bs.style.borderBottomColor = tab === "spl" ? "var(--accent)" : "transparent"; bs.style.color = tab === "spl" ? "var(--text)" : "var(--text3)"; } const pc = document.getElementById("panel-cons"); const ps = document.getElementById("panel-spl-inner"); if (pc) pc.style.display = tab === "cons" ? "" : "none"; if (ps) ps.style.display = tab === "spl" ? "" : "none"; }
         function switchSavePage(page) { currentSavePage = page;["personal", "shared"].forEach(p => { const el = document.getElementById("save-page-" + p); if (el) el.style.display = p === page ? "" : "none"; document.getElementById("spb-" + p)?.classList.toggle("active", p === page); }); if (page === "personal") { renderSaveList(); updateExport(); } if (page === "shared") { renderSharedList(); updateExport(); } }
         function setInputMode(mode) {
-            inputMode = mode; document.getElementById("btn-mode-6").classList.toggle("active", mode === 6); document.getElementById("btn-mode-7").classList.toggle("active", mode === 7); document.getElementById("mode-hint").textContent = mode === 6 ? "6版値\u21927版%に自動変換" : "7版%を直接入力"; document.getElementById("sg-hd-inp").textContent = mode === 6 ? "6版" : "7版%"; document.getElementById("sg-hd-conv").textContent = mode === 6 ? "7版%" : "6版"; const isV7 = mode === 7; document.querySelectorAll(".sg-inp[data-key]").forEach(inp => { const k = inp.dataset.key, v = vals[k] || 0; inp.value = v > 0 ? (mode === 6 ? Math.round(v / 5) : v) : ""; inp.placeholder = mode === 6 ? "6版値" : "7版%"; inp.style.background = isV7 ? "rgba(40,85,160,0.10)" : ""; inp.style.borderColor = isV7 ? "rgba(40,85,160,0.35)" : ""; }); const _pb = document.querySelector(".parse-block"), _pi = document.getElementById("parse-input"); if (_pi) { _pi.style.background = isV7 ? "rgba(40,85,160,0.07)" : ""; _pi.style.borderColor = isV7 ? "rgba(40,85,160,0.35)" : ""; } if (_pb) { _pb.style.borderColor = isV7 ? "rgba(40,85,160,0.5)" : ""; _pb.style.background = isV7 ? "rgba(40,85,160,0.04)" : ""; } updateStatDisplay(); const isV7b = mode === 7;
+            inputMode = mode; document.getElementById("btn-mode-6").classList.toggle("active", mode === 6); document.getElementById("btn-mode-7").classList.toggle("active", mode === 7); document.getElementById("mode-hint").textContent = mode === 6 ? "6版値\u21927版%に自動変換" : "7版%を直接入力"; document.getElementById("sg-hd-inp").textContent = mode === 6 ? "6版" : "7版%"; document.getElementById("sg-hd-conv").textContent = mode === 6 ? "7版%" : "6版"; const isV7 = mode === 7; document.querySelectorAll(".sg-inp[data-key]").forEach(inp => { const k = inp.dataset.key, v = vals[k] || 0; inp.value = v > 0 ? (mode === 6 ? Math.round(v / 5) : v) : ""; inp.placeholder = mode === 6 ? "6版値" : "7版%"; inp.style.background = isV7 ? "rgba(40,85,160,0.10)" : ""; inp.style.borderColor = isV7 ? "rgba(40,85,160,0.35)" : ""; }); const _pb = document.querySelector(".parse-block"), _pi = document.getElementById("parse-input"); if (_pi) { _pi.style.background = isV7 ? "rgba(40,85,160,0.07)" : ""; _pi.style.borderColor = isV7 ? "rgba(40,85,160,0.35)" : ""; } if (_pb) { _pb.style.borderColor = isV7 ? "rgba(40,85,160,0.5)" : ""; _pb.style.background = isV7 ? "var(--bg)" : ""; } updateStatDisplay(); const isV7b = mode === 7;
             ["hp", "mp", "san", "luck"].forEach(k => {
                 const inp = document.getElementById("di-" + k);
                 if (inp) {
@@ -6732,17 +6732,8 @@
                         } else {
                             applyFn();
                         }
-                    } else {
-                        // 空きスロットに追加（空きがなければ末尾に新規追加）
-                        const emptySlot = customFields.find(x => !x.label);
-                        if (emptySlot) {
-                            emptySlot.label = cf.label;
-                            emptySlot.value = cf.value;
-                            emptySlot.max = cf.max;
-                        } else {
-                            customFields.push({ id: 'cf' + (customFields.length + 1), label: cf.label, value: cf.value, max: cf.max });
-                        }
                     }
+                    // 既存ラベルがない場合は追加しない（上書きのみ）
                 });
                 saveCustomFields();
                 buildCustomFieldRows();
