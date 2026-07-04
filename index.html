@@ -4803,15 +4803,13 @@
                 }
             };
         }
-
-        function copyKomaJson() {
-            const obj = _buildKomaJsonObj();
-            const paletteText = getKomaPaletteText();
-            if (!paletteText && !obj.data.faces.length) { showToast('ラベルがありません'); return; }
-            navigator.clipboard.writeText(JSON.stringify(obj))
-                .then(() => showToast('JSONをコピーしました'))
-                .catch(() => showToast('コピー失敗'));
-        }
+// 新（空でも常にコピーできるようにガードを撤去）
+    function copyKomaJson() {
+    const obj = _buildKomaJsonObj();
+    navigator.clipboard.writeText(JSON.stringify(obj))
+        .then(() => showToast('JSONをコピーしました'))
+        .catch(() => showToast('コピー失敗'));
+}
 
         function lSavedKomas() { try { return JSON.parse(localStorage.getItem("coc_v4_komas") || "[]"); } catch { return []; } }
         function wSavedKomas(l) { localStorage.setItem("coc_v4_komas", JSON.stringify(l)); }
@@ -7770,7 +7768,8 @@
         }
         function copyExport() {
             if (exportMode === "json") {
-                const hasKomaData2 = (currentKoma.labels || []).some(l => !l._sep && l.text) || (currentKoma.statusList || []).some(s => !s._sep && s.label) || (currentKoma.paramList || []).some(p => !p._sep && p.label) || (currentKoma.manualPalette || '').trim(); const any = STATS.some(s => (vals[s.key] || 0) > 0) || getEff("hp") > 0 || atkList.some(a => a.name) || skList.some(s => s.name && (s.val || 0) > 0) || hasKomaData2; if (!any) { showToast("\u30c7\u30fc\u30bf\u304c\u3042\u308a\u307e\u305b\u3093"); return; }
+                // 新（NPC名だけの入力でも any = true になるよう条件を追加）
+const hasKomaData2 = (currentKoma.labels || []).some(l => !l._sep && l.text) || (currentKoma.statusList || []).some(s => !s._sep && s.label) || (currentKoma.paramList || []).some(p => !p._sep && p.label) || (currentKoma.manualPalette || '').trim(); const hasName = (document.getElementById("npc-name")?.value || "").trim() !== ""; const any = hasName || STATS.some(s => (vals[s.key] || 0) > 0) || getEff("hp") > 0 || atkList.some(a => a.name) || skList.some(s => s.name && (s.val || 0) > 0) || hasKomaData2; if (!any) { showToast("\u30c7\u30fc\u30bf\u304c\u3042\u308a\u307e\u305b\u3093"); return; }
                 const tabCtx = getActiveTabCtx();
                 const useKoma = tabCtx !== 'stats'; const obj = JSON.parse(buildCocoforiaJson(useKoma, tabCtx)); navigator.clipboard.writeText(JSON.stringify(obj)).then(() => showToast("\u30b3\u30d4\u30fc\u3057\u307e\u3057\u305f\uff01")).catch(() => showToast("\u30b3\u30d4\u30fc\u5931\u6557"));
             } else { const tabCtx = getActiveTabCtx(); const el = document.getElementById(getExportPreviewElId(tabCtx)); const txt = el?.textContent; if (!txt || txt === "\uff08\u30b9\u30c6\u30fc\u30bf\u30b9\u3092\u5165\u529b\u3059\u308b\u3068\u51fa\u529b\u3055\u308c\u307e\u3059\uff09") { showToast("\u30c7\u30fc\u30bf\u304c\u3042\u308a\u307e\u305b\u3093"); return; } navigator.clipboard.writeText(txt).then(() => showToast("\u30b3\u30d4\u30fc\u3057\u307e\u3057\u305f")).catch(() => showToast("\u30b3\u30d4\u30fc\u5931\u6557")); }
