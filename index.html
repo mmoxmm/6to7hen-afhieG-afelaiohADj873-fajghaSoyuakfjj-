@@ -2359,12 +2359,12 @@
         <h1>CoC 変換ツール</h1>
          
         <div class="mode-bar">
-            <button class="seg-btn active" id="btn-mode-6" onclick="setInputMode(6)">6版入力</button>
-            <button class="seg-btn" id="btn-mode-7" onclick="setInputMode(7)">7版入力</button>
+            <button class="seg-btn" id="btn-mode-6" onclick="setInputMode(6)">6版入力</button>
+            <button class="seg-btn active" id="btn-mode-7" onclick="setInputMode(7)">7版入力</button>
             <button class="seg-btn" onclick="convertInputMode()" id="btn-mode-conv"
                 style="background:var(--warn-bg);border-color:var(--warn);color:var(--warn);font-size:11px"
                 title="入力済みの値をそのまま別バージョンに変換して切り替え">上書き：６版 🔀７版</button>
-            <span id="mode-hint" style="font-size:11px;color:var(--text3)">6版値→7版%に自動変換</span>
+            <span id="mode-hint" style="font-size:11px;color:var(--text3)">7版%→6版値に自動変換</span>
         </div>
         <div style="display:flex;gap:4px;align-items:center;margin-bottom:5px">
             <div style="display:flex;align-items:center;gap:3px;flex:2">
@@ -2434,8 +2434,8 @@
                         <div class="stat-grid-wrap">
                             <div class="sg-col-hd" style="text-align:center;color:var(--text2);font-weight:700">特性値
                             </div>
-                            <div class="sg-col-hd" id="sg-hd-inp">6版</div>
-                            <div class="sg-col-hd" id="sg-hd-conv">7版%</div>
+                            <div class="sg-col-hd" id="sg-hd-inp">7版%</div>
+                            <div class="sg-col-hd" id="sg-hd-conv">6版</div>
                             <div class="sg-col-hd" id="sg-col-hd-h" style="color:#c03030">½(H)</div>
                             <div class="sg-col-hd" id="sg-col-hd-e" style="color:#2855a0">⅕(E)</div>
                         </div>
@@ -5586,7 +5586,7 @@
         // カスタムフィールド（特性値セクション下部）
         let customFields = [{ id: 'cf1', label: '', value: '', max: '' }, { id: 'cf2', label: '', value: '', max: '' }, { id: 'cf3', label: '', value: '', max: '' }, { id: 'cf4', label: '', value: '', max: '' }];
         function saveCustomFields() { localStorage.setItem('coc_custom_fields', JSON.stringify(customFields)); }
-        let inputMode = 6;
+        let inputMode = 7;
         const ov = { hp: 0, mp: 0, san: 0, luck: 0 };
         let ovManual = { hp: false, mp: false, san: false, luck: false };
         let skList = [{ id: 0, name: "", val: 0 }];
