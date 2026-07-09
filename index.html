@@ -4300,16 +4300,14 @@
 
             const close = () => pop.remove();
             cancelBtn.addEventListener('click', close);
-            const confirm = async () => {
+            const confirm = () => {
                 const tag = inp.value.trim();
-                console.log('confirm fired, tag:', tag);  // ← 追加
                 close();
                 if (!tag) return;
                 if (!_tagOrder.includes(tag)) {
                     _tagOrder.push(tag);
-                    await saveTagOrder();
+                    saveTagOrder(); // 反映を待たせないよう同期はバックグラウンドで実行
                 }
-                console.log('_tagOrder after push:', _tagOrder);  // ← 追加
                 if (containerId === 'tag-filter-bar-personal') { renderSaveList(); renderTagFilterBar(containerId, getPersonalTags(), _personalTagFilter, onClickFn); }
                 else if (containerId === 'tag-filter-bar-shared') { renderSharedList(); renderTagFilterBar(containerId, getSharedTags(), _sharedTagFilter, onClickFn); }
                 else if (containerId === 'tag-filter-bar-koma') { renderKomaSaveList(); renderTagFilterBar(containerId, getKomaTags(), _komaTagFilter, onClickFn); }
@@ -8461,6 +8459,7 @@ const hasKomaData2 = (currentKoma.labels || []).some(l => !l._sep && l.text) || 
             wrap.querySelectorAll("[data-tag-filter]").forEach(el => {
                 let lastTap = 0;
                 let tapTimer = null;
+                let _downX = 0, _downY = 0, _moved = false;
 
                 const showDeleteConfirm = () => {
                     const tag = el.dataset.tagName;
@@ -8516,8 +8515,15 @@ const hasKomaData2 = (currentKoma.labels || []).some(l => !l._sep && l.text) || 
                     }
                 };
 
+                el.addEventListener("pointerdown", e => {
+                    _downX = e.clientX; _downY = e.clientY; _moved = false;
+                });
+                el.addEventListener("pointermove", e => {
+                    if (Math.abs(e.clientX - _downX) > 6 || Math.abs(e.clientY - _downY) > 6) _moved = true;
+                });
                 el.addEventListener("click", e => {
                     e.stopPropagation();
+                    if (_moved) { _moved = false; return; }
                     const now = Date.now();
                     const isDouble = (now - lastTap) < 400;
                     lastTap = now;
@@ -8536,8 +8542,8 @@ const hasKomaData2 = (currentKoma.labels || []).some(l => !l._sep && l.text) || 
                     evClick.stopPropagation();
                     const id = +el.dataset.id;
                     const isShared = el.dataset.shared === "1";
-                    const list = isShared ? lSharedSaves() : currentSaves;
-                    const sv = list.find(s => s.id === id);
+                    const getFreshSv = () => (isShared ? lSharedSaves() : currentSaves).find(s => s.id === id);
+                    let sv = getFreshSv();
                     if (!sv) return;
 
                     // 既存ポップアップを全閉
@@ -8660,6 +8666,8 @@ const hasKomaData2 = (currentKoma.labels || []).some(l => !l._sep && l.text) || 
                         if (_processing) return;
                         tag = (tag || '').trim();
                         if (!tag) return;
+                        sv = getFreshSv();
+                        if (!sv) return;
                         if ((sv.tags || []).includes(tag)) {
                             showToast('「' + tag + '」はすでに付いています');
                             inp.value = '';
@@ -8672,13 +8680,14 @@ const hasKomaData2 = (currentKoma.labels || []).some(l => !l._sep && l.text) || 
 
                         if (!_tagOrder.includes(tag)) {
                             _tagOrder.push(tag);
-                            await saveTagOrder();
+                            saveTagOrder();
                         }
                         if (isShared) {
-                            wSharedSaves(list);
+                            const freshList = lSharedSaves().map(s => s.id === sv.id ? sv : s);
+                            wSharedSaves(freshList);
                             if (sharedToken) sharedGistSet({ saves: lSharedSaves(), tagOrder: _tagOrder, tagSaveOrder: _tagSaveOrder });
                         } else {
-                            // list は古い参照の可能性があるため lSaves() で再取得して保存
+                            // 常に最新のlSaves()を再取得して保存（同期処理と競合しないように）
                             const freshSaves = lSaves().map(s => s.id === sv.id ? sv : s);
                             writeSaves(freshSaves);
                             if (syncToken) gistSet({ saves: lSaves(), mythos: { beings: customBeings, spells: customSpells }, tagOrder: _tagOrder, tagSaveOrder: _tagSaveOrder });
@@ -8698,14 +8707,18 @@ const hasKomaData2 = (currentKoma.labels || []).some(l => !l._sep && l.text) || 
                             _chipDidLong = false;
                             _chipTimer = setTimeout(() => {
                                 _chipDidLong = true;
-                                sv.tags = (sv.tags || []).filter(t => t !== tag);
+                                const freshSv = getFreshSv();
+                                if (!freshSv) return;
+                                freshSv.tags = (freshSv.tags || []).filter(t => t !== tag);
                                 chip.remove();
                                 if (isShared) {
-                                    wSharedSaves(list);
+                                    const freshList = lSharedSaves().map(s => s.id === freshSv.id ? freshSv : s);
+                                    wSharedSaves(freshList);
                                     if (sharedToken) sharedGistSet({ saves: lSharedSaves() });
                                     renderSharedList(); renderKomaSaveList(); renderStatSaveList();
                                 } else {
-                                    writeSaves(list);
+                                    const freshSaves = lSaves().map(s => s.id === freshSv.id ? freshSv : s);
+                                    writeSaves(freshSaves);
                                     if (syncToken) gistSet({ saves: lSaves(), mythos: { beings: customBeings, spells: customSpells } });
                                     renderSaveList(); renderKomaSaveList(); renderStatSaveList();
                                 }
