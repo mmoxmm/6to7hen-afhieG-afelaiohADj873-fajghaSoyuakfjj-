@@ -2167,6 +2167,12 @@
             background: rgba(168, 96, 16, .10)
         }
 
+        .koma-at-btn.active-none {
+            border-color: var(--danger);
+            color: var(--danger);
+            background: rgba(192, 48, 48, .10)
+        }
+
         .koma-label-row {
             display: flex;
             align-items: center;
@@ -4924,24 +4930,39 @@
                 btnFull.textContent = "＠";
                 btnFull.title = "全角（個別）";
 
+                const btnNone = document.createElement("button");
+                btnNone.className = "koma-at-btn" + (lbl.atOverride === "none" ? " active-none" : "");
+                btnNone.textContent = "×";
+                btnNone.title = "パレットに追加しない（差分のみ反映）";
+
                 // クロージャバグ対策：毎回 currentKoma.labels[idx] を参照
                 btnDefault.addEventListener("click", () => {
                     currentKoma.labels[idx] = { ...currentKoma.labels[idx], atOverride: null };
                     buildKomaLabelRows();
                     renderKomaPalettePreview();
+                    updateKomaJsonPreview();
                 });
                 btnHalf.addEventListener("click", () => {
                     currentKoma.labels[idx] = { ...currentKoma.labels[idx], atOverride: "@" };
                     buildKomaLabelRows();
                     renderKomaPalettePreview();
+                    updateKomaJsonPreview();
                 });
                 btnFull.addEventListener("click", () => {
                     currentKoma.labels[idx] = { ...currentKoma.labels[idx], atOverride: "＠" };
                     buildKomaLabelRows();
                     renderKomaPalettePreview();
+                    updateKomaJsonPreview();
+                });
+                btnNone.addEventListener("click", () => {
+                    currentKoma.labels[idx] = { ...currentKoma.labels[idx], atOverride: "none" };
+                    buildKomaLabelRows();
+                    renderKomaPalettePreview();
+                    updateKomaJsonPreview();
                 });
 
-                atWrap.append(btnDefault, btnHalf, btnFull);
+                atWrap.append(btnDefault, btnHalf, btnFull, btnNone);
+                if (lbl.atOverride === "none") row.style.opacity = "0.55";
 
                 const rm = document.createElement("button");
                 rm.className = "btn-remove"; rm.textContent = "×";
@@ -4994,6 +5015,9 @@
                 }
                 if (!lbl.text) {
                     return;
+                }
+                if (lbl.atOverride === "none") {
+                    return; // ×：パレットには追加しない（faces差分には影響しない）
                 }
                 const at = getKomaAt(lbl);
                 diffLines.push({ text: type === "named" ? at + lbl.text + (name ? " 【" + name + "】" : "") : at + lbl.text });
