@@ -2372,6 +2372,7 @@
                 title="入力済みの値をそのまま別バージョンに変換して切り替え">上書き：６版 🔀７版</button>
             <span id="mode-hint" style="font-size:11px;color:var(--text3)">7版%→6版値に自動変換</span>
             <span style="flex:1"></span>
+            <span id="current-card-name" style="font-size:11px;color:var(--accent);font-weight:700;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex-shrink:1"></span>
             <button class="seg-btn" onclick="quickSaveModeBar('personal')" id="btn-modebar-save-personal"
                 style="background:var(--accent);border-color:var(--accent);color:#fff"
                 title="選択中のタブに応じて個人に保存（ステータス/コマ/保存タブで対象が変わります）">👤保存</button>
@@ -4249,6 +4250,27 @@
         // ===== 6版/7版行の一括保存・上書きボタン =====
         function getActiveMainTab() {
             return document.querySelector('.tab[data-tab].active')?.dataset.tab || 'stats';
+        }
+
+        function updateCurrentCardNameDisplay() {
+            const el = document.getElementById('current-card-name');
+            if (!el) return;
+            const t = getActiveMainTab();
+            let name = '';
+            if (t === 'koma') {
+                if (_lastLoadedKomaId) {
+                    const list = _lastLoadedKomaShared ? lSharedSaves() : lSaves();
+                    const sv = list.find(s => s.id === _lastLoadedKomaId);
+                    if (sv) name = (sv._isKoma ? sv.name : sv.komaData?.name) || '';
+                }
+            } else {
+                if (_lastLoadedStatId) {
+                    const list = _lastLoadedStatShared ? lSharedSaves() : lSaves();
+                    const sv = list.find(s => s.id === _lastLoadedStatId);
+                    if (sv) name = sv.name || '';
+                }
+            }
+            el.textContent = name ? ('📌 ' + name) : '';
         }
 
         function quickSaveModeBar(dest) {
@@ -7066,6 +7088,9 @@
             const noPaletteReset = document.getElementById('koma-chk-no-palette');
             if (noPaletteReset) noPaletteReset.checked = false;
             updateKomaJsonPreview();
+            _lastLoadedStatId = null; _lastLoadedStatShared = false;
+            _lastLoadedKomaId = null; _lastLoadedKomaShared = false;
+            updateCurrentCardNameDisplay();
             updateStatDisplay(); showToast("リセットしました");
         }
 
@@ -7090,6 +7115,8 @@
             const draftEl = document.getElementById("koma-manual-draft");
             if (draftEl) draftEl.value = "";
             try { localStorage.removeItem("coc_koma_manual_draft"); } catch { }
+            _lastLoadedKomaId = null; _lastLoadedKomaShared = false;
+            updateCurrentCardNameDisplay();
             showToast("コマデータをリセットしました");
         }
 
@@ -8983,7 +9010,7 @@
             let _sortSaveTimer = null;
             const debounceSave = (fn) => { clearTimeout(_sortSaveTimer); _sortSaveTimer = setTimeout(fn, 300); };
             // 読込ボタン（展開CBを参照）
-            wrap.querySelectorAll(".btn-load").forEach(btn => { btn.addEventListener("click", () => { const isShared = btn.dataset.shared === "1"; const list = isShared ? lSharedSaves() : currentSaves; const sv = list.find(s => s.id === +btn.dataset.id); if (!sv) return; const doExpand = !(document.getElementById(btn.dataset.cb)?.checked || false); if (sv._isKoma) { loadKomaData(sv.id, isShared); } else { loadDataIntoEditor(sv, doExpand); _lastLoadedStatId = sv.id; _lastLoadedStatShared = isShared; if (sv.komaData) { _lastLoadedKomaId = sv.id; _lastLoadedKomaShared = isShared; } showToast("「" + sv.name + "」を読み込みました"); } }); });
+            wrap.querySelectorAll(".btn-load").forEach(btn => { btn.addEventListener("click", () => { const isShared = btn.dataset.shared === "1"; const list = isShared ? lSharedSaves() : currentSaves; const sv = list.find(s => s.id === +btn.dataset.id); if (!sv) return; const doExpand = !(document.getElementById(btn.dataset.cb)?.checked || false); if (sv._isKoma) { loadKomaData(sv.id, isShared); } else { loadDataIntoEditor(sv, doExpand); _lastLoadedStatId = sv.id; _lastLoadedStatShared = isShared; if (sv.komaData) { _lastLoadedKomaId = sv.id; _lastLoadedKomaShared = isShared; } updateCurrentCardNameDisplay(); showToast("「" + sv.name + "」を読み込みました"); } }); });
             // 閉じるcheckの変更をsv.collapseに保存してGist同期
             wrap.querySelectorAll('input[id^="cb-collapse-"]').forEach(cb => {
                 cb.addEventListener("change", () => {
@@ -9554,6 +9581,7 @@
             if (t === "stats") {
                 renderStatSaveList();
             }
+            updateCurrentCardNameDisplay();
         }
         document.addEventListener("DOMContentLoaded", function () {
             const hideChatEl = document.getElementById('koma-hide-chat');
