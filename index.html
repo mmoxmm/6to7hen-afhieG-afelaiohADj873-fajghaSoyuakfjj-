@@ -4337,23 +4337,49 @@
             }
         }
 
+        function showStyledConfirm({ title, bodyHtml, confirmLabel, confirmColor, onConfirm }) {
+            const overlay = document.createElement("div");
+            overlay.style.cssText = "position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9000;display:flex;align-items:center;justify-content:center;padding:20px";
+            overlay.innerHTML = '<div style="background:var(--bg);border-radius:var(--radius-lg);padding:16px;max-width:300px;width:100%;box-shadow:0 8px 32px rgba(0,0,0,.3)">'
+                + '<div style="font-size:15px;font-weight:700;margin-bottom:10px;text-align:center">' + title + '</div>'
+                + '<div style="font-size:12px;color:var(--text2);margin-bottom:14px;line-height:1.6">' + bodyHtml + '</div>'
+                + '<button id="_sc-confirm" style="width:100%;background:' + confirmColor + ';border:none;border-radius:var(--radius);color:#fff;cursor:pointer;font-family:inherit;font-size:14px;padding:10px;margin-bottom:8px;font-weight:700">' + confirmLabel + '</button>'
+                + '<button id="_sc-cancel" style="width:100%;background:none;border:0.5px solid var(--border2);border-radius:var(--radius);color:var(--text3);cursor:pointer;font-family:inherit;font-size:13px;padding:8px">キャンセル</button>'
+                + '</div>';
+            document.body.appendChild(overlay);
+            const close = () => document.body.removeChild(overlay);
+            overlay.querySelector("#_sc-cancel").addEventListener("click", close);
+            overlay.addEventListener("click", e => { if (e.target === overlay) close(); });
+            overlay.querySelector("#_sc-confirm").addEventListener("click", () => { close(); onConfirm(); });
+        }
+
         function quickOverwriteModeBar() {
             const t = getActiveMainTab();
             if (t === 'koma') {
                 if (!_lastLoadedKomaId) { showToast("先に上書きするコマを読み込んでください"); return; }
-                if (!confirm("直近に読み込んだコマを、現在のコマタブの内容で上書きしますか？")) return;
-                overwriteKomaData(_lastLoadedKomaId, _lastLoadedKomaShared);
-                return;
-            }
-            if (t === 'save') {
-                if (!_lastLoadedStatId) { showToast("先に上書きするカードを読み込んでください"); return; }
-                if (!confirm("直近に読み込んだカードを、現在のステータス＋コマの内容で上書きしますか？")) return;
-                quickOverwriteBoth(_lastLoadedStatId, _lastLoadedStatShared);
+                const list = _lastLoadedKomaShared ? lSharedSaves() : lSaves();
+                const existing = list.find(s => s.id === _lastLoadedKomaId);
+                const cardName = existing ? (existing._isKoma ? existing.name : (existing.komaData?.name || existing.name)) : '';
+                showStyledConfirm({
+                    title: "🎭 コマの上書き確認",
+                    bodyHtml: "「<strong style='color:var(--text)'>" + esc(cardName) + "</strong>」を、現在のコマタブの内容で上書きします。",
+                    confirmLabel: "🎭 コマの上書き",
+                    confirmColor: "var(--warn)",
+                    onConfirm: () => overwriteKomaData(_lastLoadedKomaId, _lastLoadedKomaShared)
+                });
                 return;
             }
             if (!_lastLoadedStatId) { showToast("先に上書きするカードを読み込んでください"); return; }
-            if (!confirm("直近に読み込んだカードのステータスを、現在の内容で上書きしますか？")) return;
-            quickOverwriteStatsOnly(_lastLoadedStatId, _lastLoadedStatShared);
+            const list2 = _lastLoadedStatShared ? lSharedSaves() : currentSaves;
+            const existing2 = list2.find(s => s.id === _lastLoadedStatId);
+            const cardName2 = existing2 ? existing2.name : '';
+            showStyledConfirm({
+                title: "📊 ステータスの上書き確認",
+                bodyHtml: "「<strong style='color:var(--text)'>" + esc(cardName2) + "</strong>」を、現在のステータスタブの内容で上書きします。",
+                confirmLabel: "📊 ステータスの上書き",
+                confirmColor: "var(--accent)",
+                onConfirm: () => quickOverwriteStatsOnly(_lastLoadedStatId, _lastLoadedStatShared)
+            });
         }
 
         // ===== 変更件数カウント（全タブ上書き確認用） =====
@@ -4429,12 +4455,15 @@
             if (!existing) { showToast("上書き対象が見つかりません"); return; }
             const statDiff = countStatChanges(existing);
             const komaDiff = countKomaChanges(existing.komaData);
-            const msg = "「" + existing.name + "」を全タブ（ステータス＋コマ）で上書きします。\n\n"
-                + "📊 ステータス変更: " + statDiff + "件\n"
-                + "🎭 コマ変更: " + komaDiff + "件\n\n"
-                + "よろしいですか？";
-            if (!confirm(msg)) return;
-            quickOverwriteBoth(id, isShared);
+            showStyledConfirm({
+                title: "📚 全タブ上書き確認",
+                bodyHtml: "「<strong style='color:var(--text)'>" + esc(existing.name) + "</strong>」を全タブ（ステータス＋コマ）で上書きします。<br><br>"
+                    + "📊 ステータス変更: " + statDiff + "件<br>"
+                    + "🎭 コマ変更: " + komaDiff + "件",
+                confirmLabel: "📚 ステータス＋コマで上書き",
+                confirmColor: "var(--danger)",
+                onConfirm: () => quickOverwriteBoth(id, isShared)
+            });
         }
 
         let _sharedFilter = "all";
