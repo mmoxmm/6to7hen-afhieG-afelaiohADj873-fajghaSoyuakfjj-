@@ -2381,6 +2381,9 @@
             <button class="seg-btn" onclick="quickOverwriteModeBar()" id="btn-modebar-overwrite"
                 style="background:var(--warn-bg);border-color:var(--warn);color:var(--warn)"
                 title="直近に読み込んだカードを、選択中のタブに応じて上書き">🔁上書き</button>
+            <button class="seg-btn" onclick="quickOverwriteAllTabs()" id="btn-modebar-overwrite-all"
+                style="background:var(--danger-bg);border-color:var(--danger);color:var(--danger)"
+                title="タブの選択に関係なく、ステータス＋コマの両方を強制上書き">🔁全タブ上書き</button>
         </div>
         <div style="display:flex;gap:4px;align-items:center;margin-bottom:5px">
             <div style="display:flex;align-items:center;gap:3px;flex:2">
@@ -4325,6 +4328,87 @@
             if (!_lastLoadedStatId) { showToast("先に上書きするカードを読み込んでください"); return; }
             if (!confirm("直近に読み込んだカードのステータスを、現在の内容で上書きしますか？")) return;
             quickOverwriteStatsOnly(_lastLoadedStatId, _lastLoadedStatShared);
+        }
+
+        // ===== 変更件数カウント（全タブ上書き確認用） =====
+        function countListDiff(oldList, newList, idField, ignoreFields = ['id']) {
+            const norm = (item) => { const o = { ...item }; ignoreFields.forEach(f => delete o[f]); return o; };
+            const oldItems = (oldList || []).filter(x => !x._sep && x[idField]);
+            const newItems = (newList || []).filter(x => !x._sep && x[idField]);
+            const oldMap = new Map(oldItems.map(x => [x[idField], JSON.stringify(norm(x))]));
+            const newMap = new Map(newItems.map(x => [x[idField], JSON.stringify(norm(x))]));
+            let diff = 0;
+            newMap.forEach((v, k) => { if (!oldMap.has(k)) diff++; else if (oldMap.get(k) !== v) diff++; });
+            oldMap.forEach((v, k) => { if (!newMap.has(k)) diff++; });
+            return diff;
+        }
+
+        function countStatChanges(existing) {
+            if (!existing) return 0;
+            let diff = 0;
+            const curName = document.getElementById('npc-name')?.value || '';
+            const exName = existing.name === '（名称なし）' ? '' : (existing.name || '');
+            if (curName !== exName) diff++;
+            const curColor = document.getElementById('npc-color')?.value || '';
+            if ((existing.color || '') !== curColor) diff++;
+            STATS.forEach(({ key }) => { if ((existing.vals?.[key] || 0) !== (vals[key] || 0)) diff++; });
+            ['hp', 'mp', 'san', 'luck'].forEach(k => { if ((existing.ov?.[k] || 0) !== (getEff(k) || 0)) diff++; });
+            diff += countListDiff(existing.skList, skList, 'name');
+            diff += countListDiff(existing.atkList, atkList, 'name');
+            diff += countListDiff(existing.splList, splList, 'name');
+            diff += countListDiff(existing.memoList, memoList, 'label');
+            diff += countListDiff(existing.consumables, consumables, 'label');
+            diff += countListDiff(existing.extraParams, extraParams, 'label');
+            (existing.customFields || []).forEach((cf, i) => {
+                const cur = customFields[i];
+                if (cur && (cf.label !== cur.label || cf.value !== cur.value || cf.max !== cur.max)) diff++;
+            });
+            if ((existing.atkHeader || '') !== atkHeader) diff++;
+            if ((existing.skHeader || '') !== skHeader) diff++;
+            if ((existing.splHeader || '') !== splHeader) diff++;
+            return diff;
+        }
+
+        function countKomaChanges(existingKoma) {
+            if (!existingKoma) {
+                return (currentKoma.labels || []).filter(l => !l._sep && l.text).length
+                    + (currentKoma.statusList || []).filter(s => !s._sep && s.label).length
+                    + (currentKoma.paramList || []).filter(p => !p._sep && p.label).length
+                    + (currentKoma.memoList || []).filter(m => m.label || m.content).length
+                    + ((currentKoma.manualPalette || '').trim() ? 1 : 0);
+            }
+            let diff = 0;
+            const curName = document.getElementById('koma-name')?.value || '';
+            const exName = existingKoma.name === '（名称なし）' ? '' : (existingKoma.name || '');
+            if (curName !== exName) diff++;
+            if ((existingKoma.globalAt || '@') !== currentKoma.globalAt) diff++;
+            diff += countListDiff(existingKoma.labels, currentKoma.labels, 'text', ['id', 'atOverride']);
+            (existingKoma.labels || []).filter(l => !l._sep && l.text).forEach(l => {
+                const cur = (currentKoma.labels || []).find(x => !x._sep && x.text === l.text);
+                if (cur && (cur.atOverride || null) !== (l.atOverride || null)) diff++;
+            });
+            diff += countListDiff(existingKoma.statusList, currentKoma.statusList, 'label');
+            diff += countListDiff(existingKoma.paramList, currentKoma.paramList, 'label');
+            diff += countListDiff(existingKoma.memoList, currentKoma.memoList, 'label');
+            if ((existingKoma.manualPalette || '') !== (currentKoma.manualPalette || '')) diff++;
+            return diff;
+        }
+
+        function quickOverwriteAllTabs() {
+            const id = _lastLoadedStatId || _lastLoadedKomaId;
+            if (!id) { showToast("先に上書きするカードを読み込んでください"); return; }
+            const isShared = _lastLoadedStatId ? _lastLoadedStatShared : _lastLoadedKomaShared;
+            const list = isShared ? lSharedSaves() : currentSaves;
+            const existing = list.find(s => s.id === id);
+            if (!existing) { showToast("上書き対象が見つかりません"); return; }
+            const statDiff = countStatChanges(existing);
+            const komaDiff = countKomaChanges(existing.komaData);
+            const msg = "「" + existing.name + "」を全タブ（ステータス＋コマ）で上書きします。\n\n"
+                + "📊 ステータス変更: " + statDiff + "件\n"
+                + "🎭 コマ変更: " + komaDiff + "件\n\n"
+                + "よろしいですか？";
+            if (!confirm(msg)) return;
+            quickOverwriteBoth(id, isShared);
         }
 
         let _sharedFilter = "all";
