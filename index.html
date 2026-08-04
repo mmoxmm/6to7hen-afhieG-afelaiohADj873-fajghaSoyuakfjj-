@@ -8644,13 +8644,14 @@
             const d = new Date(sv.savedAt);
             const ds = (d.getMonth() + 1).toString().padStart(2, '0') + '/' + d.getDate().toString().padStart(2, '0') + ' ' + d.getHours().toString().padStart(2, '0') + ':' + d.getMinutes().toString().padStart(2, '0');
             const kind = getSaveKind(sv);
-            const typeEmoji = kind === 'both' ? '📚' : kind === 'koma' ? '🎭' : '👤';
+            const typeEmoji = kind === 'both' ? '📚' : kind === 'koma' ? '🎭' : '📋';
             const cardBg = hexToRgba50(sv.color);
             const cardStyle = (cardBg ? 'background:' + cardBg + ';' : '') + (isShared ? 'border:2px solid var(--success);' : '');
 
             const chip = (bg, color, border, inner) =>
                 '<span style="display:inline-flex;align-items:center;height:16px;padding:0 4px;border-radius:3px;border:0.5px solid ' + border + ';background:' + bg + ';color:' + color + ';font-size:10px;font-weight:600;line-height:1;white-space:nowrap;margin:1px 2px 0 0;">' + inner + '</span>';
             const statChip = (l, v) => chip('var(--bg)', 'var(--text2)', 'var(--border)', '<span style="font-size:9px;color:var(--text3)">' + l + '</span> <strong style="color:var(--text)">' + v + '</strong>');
+            const divider = '<div style="border-top:0.5px solid var(--border);margin:3px 0"></div>';
 
             let viewMode = _cardViewToggle[sv.id] || 'stat';
             if (kind === 'koma') viewMode = 'koma';
@@ -8664,44 +8665,57 @@
                 const prN = (kd?.paramList || []).filter(p => !p._sep && p.label).length;
                 bodyHtml = '<div style="display:flex;flex-wrap:wrap">' + statChip('差分', lbls) + statChip('ST', stN) + statChip('PR', prN) + '</div>';
             } else {
-                const rowDerived = [];
+                // 行1: SAN HP MP
+                const row1 = [];
                 const hp = sv.ov?.hp || 0, mp = sv.ov?.mp || 0, san = sv.ov?.san || 0, luck = sv.ov?.luck || 0;
-                if (hp > 0) rowDerived.push(chip('#fcebeb', '#791f1f', '#f7c1c1', 'HP ' + hp));
-                if (mp > 0) rowDerived.push(chip('#eaf3de', '#27500a', '#c0dd97', 'MP ' + mp));
-                if (san > 0) rowDerived.push(chip('#eeedfe', '#3c3489', '#cecbf6', 'SAN ' + san));
-                if (luck > 0) rowDerived.push(chip('#fdf3e0', '#7a4a00', '#f5c97a', '幸運 ' + luck));
-                if (sv.dmgLabel && sv.dmgLabel !== 'なし') rowDerived.push(chip('var(--bg)', 'var(--text)', 'var(--border2)', 'DB ' + sv.dmgLabel));
+                if (san > 0) row1.push(chip('#eeedfe', '#3c3489', '#cecbf6', 'SAN ' + san));
+                if (hp > 0) row1.push(chip('#fcebeb', '#791f1f', '#f7c1c1', 'HP ' + hp));
+                if (mp > 0) row1.push(chip('#eaf3de', '#27500a', '#c0dd97', 'MP ' + mp));
 
-                const rowAtkSpl = [];
-                const aN = (sv.atkList || []).filter(a => a.name).length;
-                const splN = (sv.splList || []).filter(s => s.name).length;
-                if (aN > 0) rowAtkSpl.push(chip('#fbeaf0', '#ab2626', '#f4c0d1', '攻撃 ' + aN));
-                if (splN > 0) rowAtkSpl.push(chip('#eeedfe', '#5a3489', '#afa9ec', '呪文 ' + splN));
+                // 行2: 幸運 DB
+                const row2 = [];
+                if (luck > 0) row2.push(chip('#fdf3e0', '#7a4a00', '#f5c97a', '幸運 ' + luck));
+                if (sv.dmgLabel && sv.dmgLabel !== 'なし') row2.push(chip('var(--bg)', 'var(--text)', 'var(--border2)', 'DB ' + sv.dmgLabel));
 
-                const rowSkill = [];
-                const skN = (sv.skList || []).filter(s => s.name && (parseInt(s.val) || 0) > 0).length;
-                if (skN > 0) rowSkill.push(chip('#e6f1fb', '#0c447c', '#85b7eb', '技能 ' + skN));
-
-                const rowCustom = [];
+                // 行3: 追加ステータス
+                const row3 = [];
                 (sv.customFields || []).filter(cf => cf.label).forEach(cf => {
                     const cur = (cf.value !== '' && cf.value !== undefined) ? esc(String(cf.value)) : '0';
                     const mx = (cf.max !== '' && cf.max !== undefined) ? esc(String(cf.max)) : cur;
-                    rowCustom.push(chip('var(--bg)', 'var(--text2)', 'var(--border)', esc(cf.label) + ' <strong style="color:var(--text)">' + cur + '/' + mx + '</strong>'));
+                    row3.push(chip('var(--bg)', 'var(--text2)', 'var(--border)', esc(cf.label) + ' <strong style="color:var(--text)">' + cur + '/' + mx + '</strong>'));
                 });
 
-                const rowMeta = [];
-                const memoN = (sv.memoList || []).filter(m => m.label || m.content).length;
+                // 行4: 攻撃 技能
+                const row4 = [];
+                const aN = (sv.atkList || []).filter(a => a.name).length;
+                const splN = (sv.splList || []).filter(s => s.name).length;
+                const skN = (sv.skList || []).filter(s => s.name && (parseInt(s.val) || 0) > 0).length;
+                if (aN > 0) row4.push(chip('#fbeaf0', '#ab2626', '#f4c0d1', '攻撃 ' + aN));
+                if (splN > 0) row4.push(chip('#eeedfe', '#5a3489', '#afa9ec', '呪文 ' + splN));
+                if (skN > 0) row4.push(chip('#e6f1fb', '#0c447c', '#85b7eb', '技能 ' + skN));
+
+                // 行5: 消耗品 MEMO
+                const row5 = [];
                 const consArr = (sv.consumables || []).filter(c => c.label);
-                if (memoN > 0) rowMeta.push(chip('#faece7', '#712b13', '#f0997b', 'MEMO ' + memoN));
+                const memoN = (sv.memoList || []).filter(m => m.label || m.content).length;
                 if (consArr.length > 0) {
                     const curSum = consArr.reduce((s, c) => s + (parseInt(c.cur) || 0), 0);
                     const maxSum = consArr.reduce((s, c) => s + (parseInt(c.max) || 0), 0);
-                    rowMeta.push(chip('#faeeda', '#9f5704', '#fac775', '消耗品 ' + curSum + (maxSum > 0 ? '/' + maxSum : '')));
+                    row5.push(chip('#faeeda', '#9f5704', '#fac775', '消耗品 ' + curSum + (maxSum > 0 ? '/' + maxSum : '')));
                 }
+                if (memoN > 0) row5.push(chip('#faece7', '#712b13', '#f0997b', 'MEMO ' + memoN));
 
-                [rowDerived, rowAtkSpl, rowSkill, rowCustom, rowMeta].forEach(row => {
-                    if (row.length) bodyHtml += '<div style="display:flex;flex-wrap:wrap">' + row.join('') + '</div>';
-                });
+                const parts = [];
+                if (row1.length) parts.push('<div style="display:flex;flex-wrap:wrap">' + row1.join('') + '</div>');
+                if (row2.length) parts.push('<div style="display:flex;flex-wrap:wrap">' + row2.join('') + '</div>');
+                if (row3.length) parts.push('<div style="display:flex;flex-wrap:wrap">' + row3.join('') + '</div>');
+                const hasUpper = parts.length > 0;
+                const lowerParts = [];
+                if (row4.length) lowerParts.push('<div style="display:flex;flex-wrap:wrap">' + row4.join('') + '</div>');
+                if (row5.length) lowerParts.push('<div style="display:flex;flex-wrap:wrap">' + row5.join('') + '</div>');
+                if (hasUpper && lowerParts.length) parts.push(divider);
+                parts.push(...lowerParts);
+                bodyHtml = parts.join('');
             }
 
             const tags = sv.tags || [];
@@ -8721,11 +8735,12 @@
                 + '<span class="scg-name" data-id="' + sv.id + '" data-shared="' + (isShared ? 1 : 0) + '" style="cursor:pointer;font-weight:700;font-size:13px;color:var(--text);text-decoration:underline;text-decoration-color:var(--border2);white-space:normal;word-break:break-word;line-height:1.3;display:block">' + typeEmoji + ' ' + esc(showName) + '</span>'
                 + '</div>'
                 + '<div style="margin-bottom:3px;min-height:16px">' + (bodyHtml || '<div style="color:var(--text3);font-size:10px">―</div>') + '</div>'
-                + (tags.length || dndIndex === null ? '<div style="display:flex;flex-wrap:wrap;margin-bottom:4px">' + tagsHtml + '</div>' : '')
-                + '<div style="display:flex;align-items:center;gap:3px;border-top:0.5px solid var(--border);padding-top:4px;flex-wrap:wrap">'
-                + toggleBtn
+                + (tags.length ? divider + '<div style="display:flex;flex-wrap:wrap;margin-bottom:2px">' + tagsHtml + '</div>' : (dndIndex === null ? divider + '<div style="display:flex;flex-wrap:wrap;margin-bottom:2px">' + tagsHtml + '</div>' : ''))
+                + divider
+                + '<div style="display:flex;align-items:center;gap:3px;padding-top:0;flex-wrap:wrap">'
                 + '<button class="btn-update" style="font-size:10px;padding:2px 5px;border-radius:4px;cursor:pointer;background:none;border:0.5px solid #c07010;color:#c07010;" data-id="' + sv.id + '" data-shared="' + (isShared ? 1 : 0) + '" data-caller="' + callerTab + '">上書</button>'
                 + '<button class="btn-dng btn-delete" style="font-size:10px;padding:2px 5px;border-radius:4px;cursor:pointer;background:none;border:0.5px solid var(--danger);color:var(--danger);" data-id="' + sv.id + '" data-shared="' + (isShared ? 1 : 0) + '">削除</button>'
+                + toggleBtn
                 + '<span style="font-size:9px;color:var(--text3);margin-left:auto;white-space:nowrap">' + ds + '</span>'
                 + '</div>'
                 + '</div>';
