@@ -6086,6 +6086,14 @@
             atkEl.appendChild(atkSepRow);
         }
         function esc(s) { return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;") }
+        function hexToRgba50(hex) {
+            if (!hex) return null;
+            hex = String(hex).trim().replace('#', '');
+            if (hex.length === 3) hex = hex.split('').map(c => c + c).join('');
+            if (!/^[0-9a-fA-F]{6}$/.test(hex)) return null;
+            const r = parseInt(hex.substring(0, 2), 16), g = parseInt(hex.substring(2, 4), 16), b = parseInt(hex.substring(4, 6), 16);
+            return 'rgba(' + r + ',' + g + ',' + b + ',0.5)';
+        }
         function escA(s) { return String(s).replace(/&/g, "&amp;").replace(/"/g, "&quot;") }
         function showToast(m, dur = 1800) { const t = document.getElementById("toast"); t.textContent = m; t.classList.add("show"); clearTimeout(t._tt); t._tt = setTimeout(() => t.classList.remove("show"), dur); }
         function clrInp(id, wid) { const el = document.getElementById(id); if (!el) return; el.value = ""; document.getElementById(wid)?.classList.remove("hv"); el.dispatchEvent(new Event("input")); }
@@ -8637,7 +8645,8 @@
             const ds = (d.getMonth() + 1).toString().padStart(2, '0') + '/' + d.getDate().toString().padStart(2, '0') + ' ' + d.getHours().toString().padStart(2, '0') + ':' + d.getMinutes().toString().padStart(2, '0');
             const kind = getSaveKind(sv);
             const typeEmoji = kind === 'both' ? '📚' : kind === 'koma' ? '🎭' : '👤';
-            const sharedBorder = isShared ? 'border-left:3px solid var(--success);' : '';
+            const cardBg = hexToRgba50(sv.color);
+            const cardStyle = (cardBg ? 'background:' + cardBg + ';' : '') + (isShared ? 'border:2px solid var(--success);' : '');
 
             const chip = (bg, color, border, inner) =>
                 '<span style="display:inline-flex;align-items:center;height:16px;padding:0 4px;border-radius:3px;border:0.5px solid ' + border + ';background:' + bg + ';color:' + color + ';font-size:10px;font-weight:600;line-height:1;white-space:nowrap;margin:1px 2px 0 0;">' + inner + '</span>';
@@ -8653,44 +8662,68 @@
                 const lbls = (kd?.labels || []).filter(l => !l._sep && l.text).length;
                 const stN = (kd?.statusList || []).filter(s => !s._sep && s.label).length;
                 const prN = (kd?.paramList || []).filter(p => !p._sep && p.label).length;
-                bodyHtml = statChip('差分', lbls) + statChip('ST', stN) + statChip('PR', prN);
+                bodyHtml = '<div style="display:flex;flex-wrap:wrap">' + statChip('差分', lbls) + statChip('ST', stN) + statChip('PR', prN) + '</div>';
             } else {
+                const rowDerived = [];
                 const hp = sv.ov?.hp || 0, mp = sv.ov?.mp || 0, san = sv.ov?.san || 0, luck = sv.ov?.luck || 0;
-                if (hp > 0) bodyHtml += chip('#fcebeb', '#791f1f', '#f7c1c1', 'HP ' + hp);
-                if (mp > 0) bodyHtml += chip('#eaf3de', '#27500a', '#c0dd97', 'MP ' + mp);
-                if (san > 0) bodyHtml += chip('#eeedfe', '#3c3489', '#cecbf6', 'SAN ' + san);
-                if (luck > 0) bodyHtml += chip('#fdf3e0', '#7a4a00', '#f5c97a', '幸運 ' + luck);
-                if (sv.dmgLabel && sv.dmgLabel !== 'なし') bodyHtml += chip('var(--bg)', 'var(--text)', 'var(--border2)', 'DB ' + sv.dmgLabel);
+                if (hp > 0) rowDerived.push(chip('#fcebeb', '#791f1f', '#f7c1c1', 'HP ' + hp));
+                if (mp > 0) rowDerived.push(chip('#eaf3de', '#27500a', '#c0dd97', 'MP ' + mp));
+                if (san > 0) rowDerived.push(chip('#eeedfe', '#3c3489', '#cecbf6', 'SAN ' + san));
+                if (luck > 0) rowDerived.push(chip('#fdf3e0', '#7a4a00', '#f5c97a', '幸運 ' + luck));
+                if (sv.dmgLabel && sv.dmgLabel !== 'なし') rowDerived.push(chip('var(--bg)', 'var(--text)', 'var(--border2)', 'DB ' + sv.dmgLabel));
+
+                const rowAtkSpl = [];
                 const aN = (sv.atkList || []).filter(a => a.name).length;
-                const skN = (sv.skList || []).filter(s => s.name && (parseInt(s.val) || 0) > 0).length;
                 const splN = (sv.splList || []).filter(s => s.name).length;
-                if (aN > 0) bodyHtml += chip('#fbeaf0', '#ab2626', '#f4c0d1', '攻撃 ' + aN);
-                if (splN > 0) bodyHtml += chip('#eeedfe', '#5a3489', '#afa9ec', '呪文 ' + splN);
-                if (skN > 0) bodyHtml += chip('#e6f1fb', '#0c447c', '#85b7eb', '技能 ' + skN);
+                if (aN > 0) rowAtkSpl.push(chip('#fbeaf0', '#ab2626', '#f4c0d1', '攻撃 ' + aN));
+                if (splN > 0) rowAtkSpl.push(chip('#eeedfe', '#5a3489', '#afa9ec', '呪文 ' + splN));
+
+                const rowSkill = [];
+                const skN = (sv.skList || []).filter(s => s.name && (parseInt(s.val) || 0) > 0).length;
+                if (skN > 0) rowSkill.push(chip('#e6f1fb', '#0c447c', '#85b7eb', '技能 ' + skN));
+
+                const rowCustom = [];
+                (sv.customFields || []).filter(cf => cf.label).forEach(cf => {
+                    const cur = (cf.value !== '' && cf.value !== undefined) ? esc(String(cf.value)) : '0';
+                    const mx = (cf.max !== '' && cf.max !== undefined) ? esc(String(cf.max)) : cur;
+                    rowCustom.push(chip('var(--bg)', 'var(--text2)', 'var(--border)', esc(cf.label) + ' <strong style="color:var(--text)">' + cur + '/' + mx + '</strong>'));
+                });
+
+                const rowMeta = [];
+                const memoN = (sv.memoList || []).filter(m => m.label || m.content).length;
+                const consArr = (sv.consumables || []).filter(c => c.label);
+                if (memoN > 0) rowMeta.push(chip('#faece7', '#712b13', '#f0997b', 'MEMO ' + memoN));
+                if (consArr.length > 0) {
+                    const curSum = consArr.reduce((s, c) => s + (parseInt(c.cur) || 0), 0);
+                    const maxSum = consArr.reduce((s, c) => s + (parseInt(c.max) || 0), 0);
+                    rowMeta.push(chip('#faeeda', '#9f5704', '#fac775', '消耗品 ' + curSum + (maxSum > 0 ? '/' + maxSum : '')));
+                }
+
+                [rowDerived, rowAtkSpl, rowSkill, rowCustom, rowMeta].forEach(row => {
+                    if (row.length) bodyHtml += '<div style="display:flex;flex-wrap:wrap">' + row.join('') + '</div>';
+                });
             }
 
             const tags = sv.tags || [];
             const tagsHtml = tags.map(t => '<span class="tag-chip-filter" style="display:inline-flex;align-items:center;height:15px;padding:0 4px;border-radius:3px;background:var(--bg);border:0.5px solid var(--border2);color:var(--text2);font-size:10px;font-weight:600;cursor:pointer;white-space:nowrap;margin:1px 2px 0 0;" data-tag-filter="' + esc(t) + '" data-tag-name="' + esc(t) + '" data-id="' + sv.id + '" data-shared="' + (isShared ? 1 : 0) + '" data-caller="' + callerTab + '">' + esc(t) + '</span>').join('')
                 + '<span class="btn-tag-add" style="display:inline-flex;align-items:center;height:15px;padding:0 4px;border-radius:3px;background:var(--bg);border:0.5px dashed var(--border2);color:var(--text3);font-size:10px;cursor:pointer;" data-id="' + sv.id + '" data-shared="' + (isShared ? 1 : 0) + '">＋</span>';
 
-            const toggleBtn = kind === 'both' ? '<span class="scg-toggle" data-id="' + sv.id + '" style="cursor:pointer;font-size:12px;flex-shrink:0;margin-right:2px" title="ステータス/コマ表示切替">🔄</span>' : '';
-            const colorDot = sv.color ? '<span style="width:9px;height:9px;border-radius:2px;border:0.5px solid var(--border2);background:' + esc(sv.color) + ';display:inline-block;flex-shrink:0;margin-left:3px"></span>' : '';
+            const toggleBtn = kind === 'both' ? '<span class="scg-toggle" data-id="' + sv.id + '" style="cursor:pointer;font-size:12px;flex-shrink:0" title="ステータス/コマ表示切替">🔄</span>' : '';
             const komaName = (kind === 'both' && viewMode === 'koma' && sv.komaData) ? (sv.komaData.name || '') : '';
             const showName = (komaName && komaName !== '（名称なし）' && komaName !== sv.name) ? komaName : sv.name;
 
             const dndAttr = dndIndex !== null ? ' data-dnd="' + dndIndex + '"' : '';
             const reorderCls = dndIndex !== null ? ' reorder-card' : '';
 
-            return '<div class="save-card-grid' + reorderCls + '" data-svid="' + sv.id + '"' + dndAttr + ' style="' + sharedBorder + '">'
+            return '<div class="save-card-grid' + reorderCls + '" data-svid="' + sv.id + '"' + dndAttr + ' style="' + cardStyle + '">'
                 + '<span class="scg-drag" title="ドラッグで並び替え">☰</span>'
-                + '<div style="display:flex;align-items:center;gap:2px;margin-bottom:3px;padding-right:14px">'
-                + toggleBtn
-                + '<span class="scg-name" data-id="' + sv.id + '" data-shared="' + (isShared ? 1 : 0) + '" style="cursor:pointer;font-weight:700;font-size:13px;color:var(--text);text-decoration:underline;text-decoration-color:var(--border2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0">' + typeEmoji + ' ' + esc(showName) + '</span>'
-                + colorDot
+                + '<div style="margin-bottom:3px;padding-right:14px">'
+                + '<span class="scg-name" data-id="' + sv.id + '" data-shared="' + (isShared ? 1 : 0) + '" style="cursor:pointer;font-weight:700;font-size:13px;color:var(--text);text-decoration:underline;text-decoration-color:var(--border2);white-space:normal;word-break:break-word;line-height:1.3;display:block">' + typeEmoji + ' ' + esc(showName) + '</span>'
                 + '</div>'
-                + '<div style="display:flex;flex-wrap:wrap;margin-bottom:3px;min-height:16px">' + (bodyHtml || '<span style="color:var(--text3);font-size:10px">―</span>') + '</div>'
+                + '<div style="margin-bottom:3px;min-height:16px">' + (bodyHtml || '<div style="color:var(--text3);font-size:10px">―</div>') + '</div>'
                 + (tags.length || dndIndex === null ? '<div style="display:flex;flex-wrap:wrap;margin-bottom:4px">' + tagsHtml + '</div>' : '')
-                + '<div style="display:flex;align-items:center;gap:3px;border-top:0.5px solid var(--border);padding-top:4px">'
+                + '<div style="display:flex;align-items:center;gap:3px;border-top:0.5px solid var(--border);padding-top:4px;flex-wrap:wrap">'
+                + toggleBtn
                 + '<button class="btn-update" style="font-size:10px;padding:2px 5px;border-radius:4px;cursor:pointer;background:none;border:0.5px solid #c07010;color:#c07010;" data-id="' + sv.id + '" data-shared="' + (isShared ? 1 : 0) + '" data-caller="' + callerTab + '">上書</button>'
                 + '<button class="btn-dng btn-delete" style="font-size:10px;padding:2px 5px;border-radius:4px;cursor:pointer;background:none;border:0.5px solid var(--danger);color:var(--danger);" data-id="' + sv.id + '" data-shared="' + (isShared ? 1 : 0) + '">削除</button>'
                 + '<span style="font-size:9px;color:var(--text3);margin-left:auto;white-space:nowrap">' + ds + '</span>'
