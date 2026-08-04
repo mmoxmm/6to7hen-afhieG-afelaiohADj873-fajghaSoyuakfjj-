@@ -8635,7 +8635,9 @@
             const typeEmoji = kind === 'both' ? '📚' : kind === 'koma' ? '🎭' : '📋';
             const cardBg = hexToRgba50(sv.color);
             const cardStyle = cardBg ? 'background:' + cardBg + ';' : '';
-            const sharedBadge = isShared ? '<span style="position:absolute;top:3px;right:4px;font-size:9px;font-weight:700;color:#fff;background:var(--success);padding:1px 5px;border-radius:3px;line-height:1.3;pointer-events:none;box-shadow:0 1px 2px rgba(0,0,0,.15)">👥共有</span>' : '';
+            const sharedBadge = isShared
+                ? '<span style="position:absolute;top:3px;right:4px;font-size:11px;color:#fff;background:var(--success);width:18px;height:18px;border-radius:4px;display:flex;align-items:center;justify-content:center;line-height:1;pointer-events:none;box-shadow:0 1px 2px rgba(0,0,0,.15)">👥</span>'
+                : '<span style="position:absolute;top:3px;right:4px;font-size:11px;color:#fff;background:var(--accent);width:18px;height:18px;border-radius:4px;display:flex;align-items:center;justify-content:center;line-height:1;pointer-events:none;box-shadow:0 1px 2px rgba(0,0,0,.15)">👤</span>';
 
             const chip = (bg, color, border, inner) =>
                 '<span style="display:inline-flex;align-items:center;height:16px;padding:0 4px;border-radius:3px;border:0.5px solid ' + border + ';background:' + bg + ';color:' + color + ';font-size:10px;font-weight:600;line-height:1;white-space:nowrap;margin:1px 2px 0 0;">' + inner + '</span>';
@@ -8726,7 +8728,7 @@
 
             return '<div class="save-card-grid' + reorderCls + '" data-svid="' + sv.id + '"' + dndAttr + ' style="' + cardStyle + '">'
                 + sharedBadge
-                + '<div style="margin-bottom:3px;padding-right:' + (isShared ? '44px' : '0') + '">'
+                + '<div style="margin-bottom:3px;padding-right:22px">'
                 + '<span class="scg-name" data-id="' + sv.id + '" data-shared="' + (isShared ? 1 : 0) + '" style="cursor:pointer;font-weight:700;font-size:13px;color:var(--text);text-decoration:underline;text-decoration-color:var(--border2);white-space:normal;word-break:break-word;line-height:1.3;display:block">' + typeEmoji + ' ' + esc(showName) + '</span>'
                 + '</div>'
                 + '<div style="margin-bottom:3px;min-height:16px">' + (bodyHtml || '<div style="color:var(--text3);font-size:10px">―</div>') + '</div>'
