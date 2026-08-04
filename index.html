@@ -1690,9 +1690,55 @@
         }
 
         .save-list {
-            display: flex;
-            flex-direction: column;
-            gap: 4px
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 6px;
+            align-items: start
+        }
+
+        .save-card-grid {
+            background: var(--bg2);
+            border: 0.5px solid var(--border2);
+            border-radius: var(--radius-lg);
+            padding: 6px 7px;
+            position: relative;
+            box-shadow: var(--shadow);
+            transition: border-color .15s, box-shadow .15s;
+            min-width: 0
+        }
+
+        .save-card-grid.reorder-select {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 2px var(--accent)
+        }
+
+        .save-card-grid.dragging-grid {
+            opacity: .4
+        }
+
+        .save-card-grid.dragover-grid {
+            border-color: var(--accent);
+            border-style: dashed
+        }
+
+        .scg-drag {
+            display: none;
+            position: absolute;
+            top: 3px;
+            right: 4px;
+            font-size: 12px;
+            color: var(--text3);
+            cursor: grab;
+            line-height: 1;
+            touch-action: none
+        }
+
+        .save-card-grid.reorder-card .scg-drag {
+            display: block
+        }
+
+        .save-card-grid.reorder-card {
+            cursor: pointer
         }
 
         .save-card {
@@ -2368,15 +2414,19 @@
     <div class="app-header">
         <h1>CoC 変換ツール</h1>
 
-        <div class="mode-bar" style="flex-wrap:nowrap;overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding-bottom:2px">
-            <button class="seg-btn" id="btn-mode-6" onclick="setInputMode(6)" style="flex-shrink:0;padding:3px 6px">6版</button>
-            <button class="seg-btn active" id="btn-mode-7" onclick="setInputMode(7)" style="flex-shrink:0;padding:3px 6px">7版</button>
+        <div class="mode-bar"
+            style="flex-wrap:nowrap;overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding-bottom:2px">
+            <button class="seg-btn" id="btn-mode-6" onclick="setInputMode(6)"
+                style="flex-shrink:0;padding:3px 6px">6版</button>
+            <button class="seg-btn active" id="btn-mode-7" onclick="setInputMode(7)"
+                style="flex-shrink:0;padding:3px 6px">7版</button>
             <button class="seg-btn" onclick="convertInputMode()" id="btn-mode-conv"
                 style="background:var(--warn-bg);border-color:var(--warn);color:var(--warn);font-size:11px;flex-shrink:0;padding:3px 6px;white-space:nowrap"
                 title="入力済みの値をそのまま別バージョンに変換して切り替え">🔀変換</button>
             <span id="mode-hint" style="display:none"></span>
             <span style="flex:1;min-width:4px"></span>
-            <span id="current-card-name" style="font-size:11px;color:var(--accent);font-weight:700;white-space:nowrap;flex-shrink:0;margin-right:4px"></span>
+            <span id="current-card-name"
+                style="font-size:11px;color:var(--accent);font-weight:700;white-space:nowrap;flex-shrink:0;margin-right:4px"></span>
             <button class="seg-btn" onclick="quickSaveModeBar('personal')" id="btn-modebar-save-personal"
                 style="background:var(--accent);border-color:var(--accent);color:#fff;flex-shrink:0;padding:3px 6px;white-space:nowrap"
                 title="選択中のタブに応じて個人に保存（ステータス/コマ/保存タブで対象が変わります）">👤保存</button>
@@ -4179,6 +4229,7 @@
         let _lastLoadedStatId = null, _lastLoadedStatShared = false;
         let _lastLoadedKomaId = null, _lastLoadedKomaShared = false;
         let currentSaveFilter = "all"; // "all" | "char" | "koma"
+        let _cardViewToggle = {}; // id -> 'stat' | 'koma'（bothカードの表示切替、一時状態）
         let _reorderPersonal = false;
         let _reorderShared = false;
         let _reorderKoma = false;
@@ -4884,15 +4935,6 @@
                 ...personal.map(s => ({ ...s, _fromShared: false })),
                 ...shared.filter(s => !personal.find(p => p.id === s.id)).map(s => ({ ...s, _fromShared: true }))
             ].filter(sv => sv._isKoma || sv.komaData);
-
-            if (_reorderKoma) {
-                // タグ選択時のみ並び替え可能：そのタグの絞り込み結果のみを対象にする
-                let arr = all.filter(sv => (sv.tags || []).includes(_komaTagFilter));
-                arr = _applySavedOrder(arr, _tagSaveOrder[_komaTagFilter]);
-                wrap.innerHTML = '<div style="font-size:12px;font-weight:700;color:var(--accent);margin-bottom:6px">🔀「' + esc(_komaTagFilter) + '」タグ内で並び替え中</div>';
-                renderReorderableList(wrap, arr, sv => renderSaveCard(sv, !!sv._fromShared, 'koma'), () => { _tagSaveOrder[_komaTagFilter] = arr.map(x => x.id); renderKomaSaveList(); });
-                return;
-            }
 
             let filtered = all.filter(sv => {
                 if (_komaTabFilter === "personal") return !sv._fromShared;
@@ -6170,6 +6212,63 @@
 
         function makeHandle() { const h = document.createElement("div"); h.className = "sort-handle"; h.textContent = "\u2630"; return h; }
         function bindDnD(rowEl, list, idx, rebuildFn) { const handle = rowEl.querySelector(".sort-handle"); if (!handle) return; let sy = 0; handle.addEventListener("pointerdown", e => { e.preventDefault(); handle.setPointerCapture(e.pointerId); sy = e.clientY; const allR = [...rowEl.parentElement.querySelectorAll("[data-dnd]")].map(r => ({ el: r, idx: +r.dataset.dnd, top: r.getBoundingClientRect().top })); rowEl.classList.add("row-dragging"); function mv(ev) { allR.forEach(r => r.el.classList.remove("row-dragover")); const t = allR.find(r => r.idx !== idx && Math.abs(ev.clientY - r.top) < 20); if (t) t.el.classList.add("row-dragover"); } function up(ev) { handle.removeEventListener("pointermove", mv); rowEl.classList.remove("row-dragging"); allR.forEach(r => r.el.classList.remove("row-dragover")); if (Math.abs(ev.clientY - sy) < 6) return; let ti = idx; for (const r of allR) if (r.idx !== idx && Math.abs(ev.clientY - r.top - 10) < 26) { ti = r.idx; break; } if (ti === idx) return; const item = list.splice(idx, 1)[0]; list.splice(ti, 0, item); rebuildFn(); } handle.addEventListener("pointermove", mv); handle.addEventListener("pointerup", up, { once: true }); }); }
+
+        // グリッドカード用の並び替え：☰ドラッグ と 2枚タップで入替、両方に対応
+        function bindGridReorder(container, arr, onCommit) {
+            const cards = [...container.querySelectorAll('[data-dnd]')];
+            let selectedIdx = null;
+            cards.forEach(card => {
+                const idx = +card.dataset.dnd;
+                // タップで選択→もう1枚タップで入替
+                card.addEventListener('click', e => {
+                    if (e.target.closest('.scg-drag,.scg-name,.scg-toggle,.btn-update,.btn-delete,.tag-chip-filter,.btn-tag-add')) return;
+                    if (selectedIdx === null) {
+                        selectedIdx = idx;
+                        card.classList.add('reorder-select');
+                    } else if (selectedIdx === idx) {
+                        card.classList.remove('reorder-select');
+                        selectedIdx = null;
+                    } else {
+                        const tmp = arr[selectedIdx];
+                        arr[selectedIdx] = arr[idx];
+                        arr[idx] = tmp;
+                        cards.forEach(c => c.classList.remove('reorder-select'));
+                        selectedIdx = null;
+                        onCommit();
+                    }
+                });
+                // ☰ドラッグで入替
+                const handle = card.querySelector('.scg-drag');
+                if (!handle) return;
+                handle.addEventListener('pointerdown', e => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    handle.setPointerCapture(e.pointerId);
+                    card.classList.add('dragging-grid');
+                    function mv(ev) {
+                        cards.forEach(c => c.classList.remove('dragover-grid'));
+                        const under = document.elementFromPoint(ev.clientX, ev.clientY);
+                        const target = under?.closest('[data-dnd]');
+                        if (target && target !== card) target.classList.add('dragover-grid');
+                    }
+                    function up(ev) {
+                        handle.removeEventListener('pointermove', mv);
+                        card.classList.remove('dragging-grid');
+                        cards.forEach(c => c.classList.remove('dragover-grid'));
+                        const under = document.elementFromPoint(ev.clientX, ev.clientY);
+                        const target = under?.closest('[data-dnd]');
+                        if (target && target !== card) {
+                            const ti = +target.dataset.dnd;
+                            const item = arr.splice(idx, 1)[0];
+                            arr.splice(ti, 0, item);
+                            onCommit();
+                        }
+                    }
+                    handle.addEventListener('pointermove', mv);
+                    handle.addEventListener('pointerup', up, { once: true });
+                });
+            });
+        }
         function makeClickCopy(el, cmd, val) { if (!val) { el.textContent = "\u2014"; el.style.cursor = ""; el.onclick = null; return; } el.textContent = val; el.style.cursor = "pointer"; el.onclick = () => { navigator.clipboard.writeText(cmd).then(() => { const orig = el.textContent; el.textContent = "\u2713"; const oc = el.style.color; el.style.color = "var(--success)"; setTimeout(() => { el.textContent = orig; el.style.color = oc || ""; }, 900); addHistory(cmd); }); }; }
         function buildStatRows() {
             const wrap = document.getElementById("stat-rows"); wrap.innerHTML = ""; STATS.forEach(({ key, label, jp }) => {
@@ -8477,15 +8576,6 @@
                 ...shared.filter(s => !personal.find(p => p.id === s.id)).map(s => ({ ...s, _fromShared: true }))
             ];
 
-            if (_reorderStat) {
-                // タグ選択時のみ並び替え可能：そのタグの絞り込み結果のみを対象にする
-                let arr = allSaves.filter(sv => (sv.tags || []).includes(_statTagFilter));
-                arr = _applySavedOrder(arr, _tagSaveOrder[_statTagFilter]);
-                wrap.innerHTML = '<div style="font-size:12px;font-weight:700;color:var(--accent);margin-bottom:6px">🔀「' + esc(_statTagFilter) + '」タグ内で並び替え中</div>';
-                renderReorderableList(wrap, arr, sv => renderSaveCard(sv, !!sv._fromShared, 'stats'), () => { _tagSaveOrder[_statTagFilter] = arr.map(x => x.id); renderStatSaveList(); });
-                return;
-            }
-
             allSaves = allSaves.filter(sv => {
                 if (sv._isKoma && !sv.komaData) return false;
                 if (_statSaveFilter === "personal") return !sv._fromShared;
@@ -8512,9 +8602,15 @@
                 renderTagFilterBar('tag-filter-bar-stat-top', getStatTags(), _statTagFilter, setStatTagFilter);
                 return;
             }
+            if (_reorderStat) {
+                wrap.innerHTML = '<div style="font-size:12px;font-weight:700;color:var(--accent);margin-bottom:6px">🔀 並び替え中（☰ドラッグ or 2枚タップで入替）</div>'
+                    + '<div class="save-list">' + allSaves.map((sv, idx) => renderSaveCard(sv, !!sv._fromShared, 'stats', idx)).join('') + '</div>';
+                bindGridReorder(wrap.querySelector('.save-list'), allSaves, () => { if (_statTagFilter) _tagSaveOrder[_statTagFilter] = allSaves.map(x => x.id); renderStatSaveList(); });
+                renderTagFilterBar('tag-filter-bar-stat-top', getStatTags(), _statTagFilter, setStatTagFilter);
+                return;
+            }
             wrap.innerHTML = '<div class="save-list">' + allSaves.map(sv => renderSaveCard(sv, !!sv._fromShared, 'stats')).join("") + '</div>';
             bindSaveListEvents(wrap);
-            wrap.querySelectorAll('[data-sortbtn]').forEach(el => el.style.display = 'none'); // ↑↓は並び替えモード(ドラッグ)に統合済み
             renderTagFilterBar('tag-filter-bar-stat-top', getStatTags(), _statTagFilter, setStatTagFilter);
         }
 
@@ -8536,195 +8632,69 @@
             return { char: "👤", koma: "🎭", both: "📚" }[getSaveKind(sv)] || "👤";
         }
 
-        function renderSaveCard(sv, isShared, callerTab = 'save') {
+        function renderSaveCard(sv, isShared, callerTab = 'save', dndIndex = null) {
             const d = new Date(sv.savedAt);
             const ds = (d.getMonth() + 1).toString().padStart(2, '0') + '/' + d.getDate().toString().padStart(2, '0') + ' ' + d.getHours().toString().padStart(2, '0') + ':' + d.getMinutes().toString().padStart(2, '0');
             const kind = getSaveKind(sv);
-            const typeEmoji = kind === 'both' ? '📚 ' : kind === 'koma' ? '🎭 ' : '👤 ';
-            const sharedBg = isShared ? 'background:rgba(14,110,86,0.06);border-color:rgba(14,110,86,0.3);' : '';
+            const typeEmoji = kind === 'both' ? '📚' : kind === 'koma' ? '🎭' : '👤';
+            const sharedBorder = isShared ? 'border-left:3px solid var(--success);' : '';
 
-            const chip = (bg, color, border, inner, mono) =>
-                '<span style="display:inline-flex;align-items:center;gap:3px;height:18px;padding:0 5px;border-radius:4px;border:0.5px solid ' + border + ';background:' + bg + ';color:' + color + ';font-size:11px;font-weight:500;line-height:1;white-space:nowrap;margin:1px 0px;' + (mono ? 'font-family:monospace;' : '') + '">' + inner + '</span>';
+            const chip = (bg, color, border, inner) =>
+                '<span style="display:inline-flex;align-items:center;height:16px;padding:0 4px;border-radius:3px;border:0.5px solid ' + border + ';background:' + bg + ';color:' + color + ';font-size:10px;font-weight:600;line-height:1;white-space:nowrap;margin:1px 2px 0 0;">' + inner + '</span>';
+            const statChip = (l, v) => chip('var(--bg)', 'var(--text2)', 'var(--border)', '<span style="font-size:9px;color:var(--text3)">' + l + '</span> <strong style="color:var(--text)">' + v + '</strong>');
 
-            const statChip = (lbl, val) =>
-                '<span style="display:inline-flex;align-items:center;height:18px;padding:0 5px;border-radius:4px;border:0.5px solid var(--border);background:var(--bg2);font-size:11px;line-height:1;white-space:nowrap;gap:2px"><span style="font-size:10px;color:var(--text3)">' + lbl + '</span><strong style="color:var(--text);font-weight:700;font-size:11px">' + val + '</strong></span>';
-
-            const sep = '<span style="color:var(--text3);font-size:12px;padding:0 2px;line-height:1;display:inline-flex;align-items:center;justify-content:center;height:18px;margin:1px 1px;position:relative;top:-1px">|</span>';
-
-            const btnStyle = 'font-size:11px;padding:0 7px;height:20px;line-height:20px;border-radius:5px;cursor:pointer;font-family:inherit;white-space:nowrap;display:inline-flex;align-items:center;';
-            const cbId = 'cb-collapse-' + sv.id;
-            const collapseChecked = sv.collapse ? ' checked' : '';
-            const collapseChk = '<label style="display:inline-flex;align-items:center;gap:2px;height:20px;cursor:pointer;font-size:10px;color:var(--text3);white-space:nowrap;flex-shrink:0;padding:0 3px;" title="読込時にブロックを閉じる"><input type="checkbox" id="' + cbId + '"' + collapseChecked + ' style="cursor:pointer;accent-color:var(--accent);width:11px;height:11px;margin:0;">閉</label>';
-
-            const actions = '<button class="btn-load" style="' + btnStyle + 'background:var(--text);border:0.5px solid var(--text);color:var(--bg);" data-id="' + sv.id + '" data-shared="' + (isShared ? 1 : 0) + '" data-cb="' + cbId + '">読込</button>'
-                + '<button class="btn-update" style="' + btnStyle + 'background:none;border:0.5px solid #c07010;color:#c07010;" data-id="' + sv.id + '" data-shared="' + (isShared ? 1 : 0) + '" data-caller="' + callerTab + '">上書</button>'
-                + '<button class="btn-dng btn-delete" style="' + btnStyle + 'background:none;border:0.5px solid var(--danger);color:var(--danger);" data-id="' + sv.id + '" data-shared="' + (isShared ? 1 : 0) + '">削除</button>';
-
-            const tags = sv.tags || [];
-            const tagsHtml = '<div style="display:flex;align-items:center;gap:2px;flex-shrink:0">'
-                + tags.map(t => '<span class="tag-chip-filter" style="display:inline-flex;align-items:center;height:18px;line-height:1;padding:0 5px;border-radius:4px;background:var(--bg);border:0.5px solid var(--border2);color:var(--text2);font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;user-select:none;overflow:hidden;box-sizing:border-box;" data-tag-filter="' + esc(t) + '" data-tag-name="' + esc(t) + '" data-id="' + sv.id + '" data-shared="' + (isShared ? 1 : 0) + '" data-caller="' + callerTab + '">' + esc(t) + '</span>').join('')
-                + '<span class="btn-tag-add" style="display:inline-flex;align-items:center;height:18px;padding:0 5px;border-radius:4px;background:var(--bg);border:0.5px dashed var(--border2);color:var(--text3);font-size:11px;cursor:pointer;white-space:nowrap;box-sizing:border-box;" data-id="' + sv.id + '" data-shared="' + (isShared ? 1 : 0) + '">＋</span>'
-                + '</div>';
-
-            // ---- レイアウトヘルパー ----
-            // 行の各パーツを組み立てるヘルパー
-            // row(チップエリア, 右端コントロール): チップが左・コントロールが右端固定
-            const mkRow = (chipArea, ctrl, mb) =>
-                '<div style="display:flex;align-items:center;gap:4px;min-height:22px;' + (mb ? 'margin-bottom:' + mb + ';' : '') + '">'
-                + '<div style="display:flex;flex-wrap:wrap;align-items:center;gap:1px;flex:1;min-width:0;">' + chipArea + '</div>'
-                + '<div style="display:flex;align-items:center;gap:3px;flex-shrink:0;margin-left:4px;">' + (ctrl || '') + '</div>'
-                + '</div>';
-            // 派生と能力の間の点線
-            const dottedLine = '<div style="border-top:1px dashed var(--border2);margin:3px 0;"></div>';
-            // 能力とコマの間の線（BOTHのみ使用）
-            const komaLine = '<div style="border-top:1px solid var(--border2);margin:3px 0;"></div>';
-
-            // ---- 1行目：名前 + タグ + ボタン + 日付 ----
-            const colorChipHtml = sv.color ? ('<span style="display:inline-flex;align-items:center;gap:2px;font-size:11px;color:var(--text3);flex-shrink:0;white-space:nowrap;vertical-align:middle;position:relative;top:0"><span style="width:10px;height:10px;border-radius:2px;border:0.5px solid var(--border2);background:' + esc(sv.color) + ';display:inline-block;flex-shrink:0;position:relative;top:0"></span>' + esc(sv.color) + '</span>') : '';
-            // bothカードはステータスタブ名を正とし、コマ名が異なる場合は（コマ名）を付加
-            // bothカード：コマ名はkomaData.nameを正として、ステータス名と異なれば（コマ名）を付加
-            const komaName = (kind === 'both' && sv.komaData) ? (sv.komaData.name || '') : '';
-            const komaSubName = (kind === 'both' && komaName && komaName !== '（名称なし）' && komaName !== sv.name)
-                ? '<span style="font-size:12px;color:var(--text3);font-weight:400;margin-left:2px">(' + esc(komaName) + ')</span>' : '';
-            const row1Html = '<div style="display:flex;align-items:center;gap:6px;margin-bottom:5px;flex-wrap:nowrap">'
-                + '<div style="display:flex;align-items:baseline;gap:5px;font-size:14px;font-weight:500;color:var(--text);flex:1;min-width:0;overflow:hidden">'
-                + '<span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0">' + typeEmoji + '<span style="text-decoration:underline">' + esc(sv.name) + '</span>' + komaSubName + '</span>'
-                + colorChipHtml
-                + '</div>'
-                + tagsHtml
-                + '<div style="display:flex;gap:3px;flex-shrink:0;align-items:center;">' + actions + '</div>'
-                + '<div style="font-size:11px;color:var(--text3);white-space:nowrap;flex-shrink:0">' + ds + '</div>'
-                + '</div>';
+            let viewMode = _cardViewToggle[sv.id] || 'stat';
+            if (kind === 'koma') viewMode = 'koma';
+            if (kind === 'char') viewMode = 'stat';
 
             let bodyHtml = '';
-
-            if (kind === 'koma') {
-                // ---- KOMA ----
-                const kd = sv.komaData || sv;
-                const lbls = (kd.labels || []).filter(l => !l._sep && l.text).length;
-                const stN = (kd.statusList || []).filter(s => !s._sep && s.label).length;
-                const prN = (kd.paramList || []).filter(p => !p._sep && p.label).length;
-                const total = lbls + stN + prN;
-                const kc = (t, v) => chip('var(--bg2)', 'var(--text2)', 'var(--border2)', t + ' <strong style="color:var(--text);font-weight:700">' + v + '</strong>');
-
-                // 2行目：コマ内訳チップ + 閉じる
-                bodyHtml += mkRow(
-                    kc('差分', lbls) + kc('ST', stN) + kc('PR', prN),
-                    collapseChk,
-                    '3px'
-                );
-                // 3行目：合計
-                bodyHtml += mkRow(
-                    chip('var(--bg2)', 'var(--text2)', 'var(--border2)', '合計 ' + total + ' 件'),
-                    '',
-                    ''
-                );
-
+            if (viewMode === 'koma') {
+                const kd = kind === 'koma' ? (sv.komaData || sv) : sv.komaData;
+                const lbls = (kd?.labels || []).filter(l => !l._sep && l.text).length;
+                const stN = (kd?.statusList || []).filter(s => !s._sep && s.label).length;
+                const prN = (kd?.paramList || []).filter(p => !p._sep && p.label).length;
+                bodyHtml = statChip('差分', lbls) + statChip('ST', stN) + statChip('PR', prN);
             } else {
-                // ---- CHAR / BOTH ----
-                const hp2 = sv.ov?.hp || 0;
-                const mp2 = sv.ov?.mp || 0;
-                const san2 = sv.ov?.san || 0;
-                const dbLabel = sv.dmgLabel && sv.dmgLabel !== 'なし' ? sv.dmgLabel : null;
+                const hp = sv.ov?.hp || 0, mp = sv.ov?.mp || 0, san = sv.ov?.san || 0, luck = sv.ov?.luck || 0;
+                if (hp > 0) bodyHtml += chip('#fcebeb', '#791f1f', '#f7c1c1', 'HP ' + hp);
+                if (mp > 0) bodyHtml += chip('#eaf3de', '#27500a', '#c0dd97', 'MP ' + mp);
+                if (san > 0) bodyHtml += chip('#eeedfe', '#3c3489', '#cecbf6', 'SAN ' + san);
+                if (luck > 0) bodyHtml += chip('#fdf3e0', '#7a4a00', '#f5c97a', '幸運 ' + luck);
+                if (sv.dmgLabel && sv.dmgLabel !== 'なし') bodyHtml += chip('var(--bg)', 'var(--text)', 'var(--border2)', 'DB ' + sv.dmgLabel);
                 const aN = (sv.atkList || []).filter(a => a.name).length;
                 const skN = (sv.skList || []).filter(s => s.name && (parseInt(s.val) || 0) > 0).length;
                 const splN = (sv.splList || []).filter(s => s.name).length;
-                const cN = (sv.consumables || []).filter(c => c.label).length;
-                const epN = (sv.extraParams || []).filter(p => p.label).length;
-                const memoN = (sv.memoList || []).filter(m => m.label || m.content).length;
-
-                // 追加ステータス（customFields）
-                const cfChips = (sv.customFields || [])
-                    .filter(cf => cf.label)
-                    .map(cf => {
-                        const cur = (cf.value !== '' && cf.value !== undefined) ? esc(String(cf.value)) : '0';
-                        const mx = (cf.max !== '' && cf.max !== undefined) ? esc(String(cf.max)) : cur;
-                        return chip('var(--bg2)', 'var(--text2)', 'var(--border2)',
-                            '<span style="font-size:10px;color:var(--text3)">' + esc(cf.label) + '</span> '
-                            + '<strong style="color:var(--text);font-weight:700;font-size:11px;vertical-align:middle">' + cur + '/' + mx + '</strong>');
-                    })
-                    .join('');
-
-                // 派生行
-                let derivedInner = '';
-                const luck2 = sv.ov?.luck || 0;
-                if (hp2 > 0) derivedInner += chip('#fcebeb', '#791f1f', '#f7c1c1', 'HP ' + hp2);
-                if (mp2 > 0) derivedInner += chip('#eaf3de', '#27500a', '#c0dd97', 'MP ' + mp2);
-                if (san2 > 0) derivedInner += chip('#eeedfe', '#3c3489', '#cecbf6', 'SAN ' + san2);
-                if (luck2 > 0) derivedInner += chip('#fdf3e0', '#7a4a00', '#f5c97a', '幸運 ' + luck2);
-                if (dbLabel) derivedInner += chip('var(--bg2)', 'var(--text)', 'var(--border2)', 'DB ' + dbLabel, true);
-                const _hasBeforeCustom = hp2 > 0 || mp2 > 0 || san2 > 0 || luck2 > 0 || !!dbLabel;
-                if (_hasBeforeCustom && cfChips) derivedInner += sep;
-                if (cfChips) derivedInner += cfChips;
-                if (epN > 0 || memoN > 0) {
-                    derivedInner += sep;
-                    if (epN > 0) derivedInner += chip('#e1f5ee', '#085041', '#5dcaa5', '<span style="font-size:10px">PR</span> <strong style="font-weight:700;font-size:11px;vertical-align:middle">' + epN + '</strong>');
-                    if (memoN > 0) derivedInner += chip('#faece7', '#712b13', '#f0997b', '<span style="font-size:10px">MEMO</span> <strong style="font-weight:700;font-size:11px;vertical-align:middle">' + memoN + '</strong>');
-                }
-
-                // 能力行（STR〜EDU | 攻撃 呪文 技能 消耗品）
-                let abilInner = '';
-                if (sv.vals) {
-                    ['str', 'con', 'siz', 'int', 'pow', 'dex', 'app', 'edu'].forEach(k => {
-                        const v = sv.vals[k] || 0;
-                        if (v > 0) abilInner += statChip(k.toUpperCase(), v);
-                    });
-                }
-                // 攻撃/呪文/技能/消耗品 の間に隙間（|なし、gap相当のmargin）
-                const rightChips =
-                    (aN > 0 ? chip('#fbeaf0', '#72243e', '#f4c0d1', '<span style="font-size:10px;color:#ab2626">攻撃</span> <strong style="font-weight:700;font-size:11px;color:#ab2626">' + aN + '</strong>') : '') +
-                    (splN > 0 ? chip('#eeedfe', '#3c3489', '#afa9ec', '<span style="font-size:10px;color:#7a43a8">呪文</span> <strong style="font-weight:700;font-size:11px;color:#5a3489">' + splN + '</strong>') : '') +
-                    (skN > 0 ? chip('#e6f1fb', '#0c447c', '#85b7eb', '<span style="font-size:10px;color:#4980bc">技能</span> <strong style="font-weight:700;font-size:11px;color:#0c447c">' + skN + '</strong>') : '') +
-                    (cN > 0 ? chip('#faeeda', '#9f5704', '#fac775', '<span style="font-size:10px;color:#b37100">消耗品</span> <strong style="font-weight:700;font-size:11px;color:#9f5704">' + (() => { const tots = (sv.consumables || []).filter(c => c.label); const cur = tots.reduce((s, c) => s + (parseInt(c.cur) || 0), 0); const max = tots.reduce((s, c) => s + (parseInt(c.max) || 0), 0); return cur + (max > 0 ? '/' + max : ''); })() + '</strong>') : '');
-                if (abilInner && rightChips) abilInner += sep;
-                abilInner += rightChips;
-
-                // 2行目：派生チップ + 閉じる + コマ非（bothのみ）
-                const derivedLabel = '<span style="font-size:10px;font-weight:700;color:var(--text3);margin-right:3px;flex-shrink:0;">派生</span>';
-                // bothカード：コマ非チェックを派生行右端に置く（コマ行が非表示でも操作できるように）
-                const hideKomaId = kind === 'both' && sv.komaData ? 'cb-hide-koma-' + sv.id : '';
-                const hideKomaChecked = sv.hideKoma ? ' checked' : '';
-                const hideKomaChkInDerived = hideKomaId
-                    ? '<label style="display:inline-flex;align-items:center;gap:2px;height:20px;cursor:pointer;font-size:10px;color:var(--text3);white-space:nowrap;flex-shrink:0;padding:0 3px;" title="コマ情報を非表示（折りたたむ）"><input type="checkbox" id="' + hideKomaId + '"' + hideKomaChecked + ' style="cursor:pointer;accent-color:var(--accent);width:11px;height:11px;margin:0;">コマ非</label>'
-                    : '';
-                bodyHtml += mkRow(
-                    derivedLabel + (derivedInner || '<span style="color:var(--text3);font-size:11px">―</span>'),
-                    collapseChk,
-                    '3px'
-                );
-                // 派生と能力の間：点線
-                bodyHtml += dottedLine;
-                // 3行目：能力チップ + コマ非（bothのみ）
-                const abilLabel = '<span style="font-size:10px;font-weight:700;color:var(--text3);margin-right:3px;flex-shrink:0;">能力</span>';
-                bodyHtml += mkRow(
-                    abilLabel + (abilInner || '<span style="color:var(--text3);font-size:11px">―</span>'),
-                    hideKomaChkInDerived,
-                    kind === 'both' && sv.komaData ? '3px' : ''
-                );
-
-                if (kind === 'both' && sv.komaData) {
-                    // 能力とコマの間：点線（BOTHのみ）
-                    bodyHtml += komaLine;
-                    const kd = sv.komaData;
-                    const lbls = (kd.labels || []).filter(l => !l._sep && l.text).length;
-                    const stN2 = (kd.statusList || []).filter(s => !s._sep && s.label).length;
-                    const prN2 = (kd.paramList || []).filter(p => !p._sep && p.label).length;
-                    const total = lbls + stN2 + prN2;
-                    const kc = (t, v) => chip('var(--bg2)', 'var(--text2)', 'var(--border2)', t + ' <strong style="color:var(--text);font-weight:700">' + v + '</strong>');
-                    // 4行目：コマ内訳 + 合計（コマ非チェックは派生行に移動済み）
-                    const komaRowWrapperId = 'koma-row-wrap-' + sv.id;
-                    const komaRowLabel = '<span style="font-size:10px;font-weight:700;color:var(--text3);margin-right:3px;flex-shrink:0;">コマ</span>';
-                    const komaRowContent = komaRowLabel + kc('差分', lbls) + kc('ST', stN2) + kc('PR', prN2) + sep + chip('var(--bg2)', 'var(--text2)', 'var(--border2)', '合計 ' + total + ' 件');
-                    const komaRowDisplay = sv.hideKoma ? 'display:none;' : '';
-                    bodyHtml += '<div id="' + komaRowWrapperId + '" style="' + komaRowDisplay + '">'
-                        + mkRow(komaRowContent, '', '')
-                        + '</div>';
-                }
+                if (aN > 0) bodyHtml += chip('#fbeaf0', '#ab2626', '#f4c0d1', '攻撃 ' + aN);
+                if (splN > 0) bodyHtml += chip('#eeedfe', '#5a3489', '#afa9ec', '呪文 ' + splN);
+                if (skN > 0) bodyHtml += chip('#e6f1fb', '#0c447c', '#85b7eb', '技能 ' + skN);
             }
 
-            return '<div class="save-card" style="padding:8px 12px;' + sharedBg + '">'
-                + row1Html
-                + bodyHtml
+            const tags = sv.tags || [];
+            const tagsHtml = tags.map(t => '<span class="tag-chip-filter" style="display:inline-flex;align-items:center;height:15px;padding:0 4px;border-radius:3px;background:var(--bg);border:0.5px solid var(--border2);color:var(--text2);font-size:10px;font-weight:600;cursor:pointer;white-space:nowrap;margin:1px 2px 0 0;" data-tag-filter="' + esc(t) + '" data-tag-name="' + esc(t) + '" data-id="' + sv.id + '" data-shared="' + (isShared ? 1 : 0) + '" data-caller="' + callerTab + '">' + esc(t) + '</span>').join('')
+                + '<span class="btn-tag-add" style="display:inline-flex;align-items:center;height:15px;padding:0 4px;border-radius:3px;background:var(--bg);border:0.5px dashed var(--border2);color:var(--text3);font-size:10px;cursor:pointer;" data-id="' + sv.id + '" data-shared="' + (isShared ? 1 : 0) + '">＋</span>';
+
+            const toggleBtn = kind === 'both' ? '<span class="scg-toggle" data-id="' + sv.id + '" style="cursor:pointer;font-size:12px;flex-shrink:0;margin-right:2px" title="ステータス/コマ表示切替">🔄</span>' : '';
+            const colorDot = sv.color ? '<span style="width:9px;height:9px;border-radius:2px;border:0.5px solid var(--border2);background:' + esc(sv.color) + ';display:inline-block;flex-shrink:0;margin-left:3px"></span>' : '';
+            const komaName = (kind === 'both' && viewMode === 'koma' && sv.komaData) ? (sv.komaData.name || '') : '';
+            const showName = (komaName && komaName !== '（名称なし）' && komaName !== sv.name) ? komaName : sv.name;
+
+            const dndAttr = dndIndex !== null ? ' data-dnd="' + dndIndex + '"' : '';
+            const reorderCls = dndIndex !== null ? ' reorder-card' : '';
+
+            return '<div class="save-card-grid' + reorderCls + '" data-svid="' + sv.id + '"' + dndAttr + ' style="' + sharedBorder + '">'
+                + '<span class="scg-drag" title="ドラッグで並び替え">☰</span>'
+                + '<div style="display:flex;align-items:center;gap:2px;margin-bottom:3px;padding-right:14px">'
+                + toggleBtn
+                + '<span class="scg-name" data-id="' + sv.id + '" data-shared="' + (isShared ? 1 : 0) + '" style="cursor:pointer;font-weight:700;font-size:13px;color:var(--text);text-decoration:underline;text-decoration-color:var(--border2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0">' + typeEmoji + ' ' + esc(showName) + '</span>'
+                + colorDot
+                + '</div>'
+                + '<div style="display:flex;flex-wrap:wrap;margin-bottom:3px;min-height:16px">' + (bodyHtml || '<span style="color:var(--text3);font-size:10px">―</span>') + '</div>'
+                + (tags.length || dndIndex === null ? '<div style="display:flex;flex-wrap:wrap;margin-bottom:4px">' + tagsHtml + '</div>' : '')
+                + '<div style="display:flex;align-items:center;gap:3px;border-top:0.5px solid var(--border);padding-top:4px">'
+                + '<button class="btn-update" style="font-size:10px;padding:2px 5px;border-radius:4px;cursor:pointer;background:none;border:0.5px solid #c07010;color:#c07010;" data-id="' + sv.id + '" data-shared="' + (isShared ? 1 : 0) + '" data-caller="' + callerTab + '">上書</button>'
+                + '<button class="btn-dng btn-delete" style="font-size:10px;padding:2px 5px;border-radius:4px;cursor:pointer;background:none;border:0.5px solid var(--danger);color:var(--danger);" data-id="' + sv.id + '" data-shared="' + (isShared ? 1 : 0) + '">削除</button>'
+                + '<span style="font-size:9px;color:var(--text3);margin-left:auto;white-space:nowrap">' + ds + '</span>'
+                + '</div>'
                 + '</div>';
         }
 
@@ -9043,7 +9013,32 @@
             let _sortSaveTimer = null;
             const debounceSave = (fn) => { clearTimeout(_sortSaveTimer); _sortSaveTimer = setTimeout(fn, 300); };
             // 読込ボタン（展開CBを参照）
-            wrap.querySelectorAll(".btn-load").forEach(btn => { btn.addEventListener("click", () => { const isShared = btn.dataset.shared === "1"; const list = isShared ? lSharedSaves() : currentSaves; const sv = list.find(s => s.id === +btn.dataset.id); if (!sv) return; const doExpand = !(document.getElementById(btn.dataset.cb)?.checked || false); if (sv._isKoma) { loadKomaData(sv.id, isShared); } else { loadDataIntoEditor(sv, doExpand); _lastLoadedStatId = sv.id; _lastLoadedStatShared = isShared; if (sv.komaData) { _lastLoadedKomaId = sv.id; _lastLoadedKomaShared = isShared; } updateCurrentCardNameDisplay(); showToast("「" + sv.name + "」を読み込みました"); } }); });
+            wrap.querySelectorAll(".scg-name").forEach(el => {
+                el.addEventListener("click", () => {
+                    const isShared = el.dataset.shared === "1";
+                    const id = +el.dataset.id;
+                    const list = isShared ? lSharedSaves() : currentSaves;
+                    const sv = list.find(s => s.id === id);
+                    if (!sv) return;
+                    if (sv._isKoma) {
+                        loadKomaData(sv.id, isShared);
+                    } else {
+                        loadDataIntoEditor(sv, false);
+                        _lastLoadedStatId = sv.id; _lastLoadedStatShared = isShared;
+                        if (sv.komaData) { _lastLoadedKomaId = sv.id; _lastLoadedKomaShared = isShared; }
+                        updateCurrentCardNameDisplay();
+                        showToast("「" + sv.name + "」を読み込みました");
+                    }
+                });
+            });
+            wrap.querySelectorAll(".scg-toggle").forEach(el => {
+                el.addEventListener("click", e => {
+                    e.stopPropagation();
+                    const id = +el.dataset.id;
+                    _cardViewToggle[id] = (_cardViewToggle[id] === 'koma') ? 'stat' : 'koma';
+                    renderSaveList(); renderSharedList(); renderKomaSaveList(); renderStatSaveList();
+                });
+            });
             // 閉じるcheckの変更をsv.collapseに保存してGist同期
             wrap.querySelectorAll('input[id^="cb-collapse-"]').forEach(cb => {
                 cb.addEventListener("change", () => {
@@ -9235,13 +9230,6 @@
             if (!wrap) return;
             const reorderBtn = document.getElementById('btn-reorder-personal');
             if (reorderBtn) reorderBtn.style.display = (_personalTagFilter || _reorderPersonal) ? '' : 'none';
-            if (_reorderPersonal) {
-                let arr = currentSaves.filter(sv => (sv.tags || []).includes(_personalTagFilter));
-                arr = _applySavedOrder(arr, _tagSaveOrder[_personalTagFilter]);
-                wrap.innerHTML = '<div style="font-size:12px;font-weight:700;color:var(--accent);margin-bottom:6px">🔀「' + esc(_personalTagFilter) + '」タグ内で並び替え中</div>';
-                renderReorderableList(wrap, arr, sv => renderSaveCard(sv, false, 'save'), () => { _tagSaveOrder[_personalTagFilter] = arr.map(x => x.id); renderSaveList(); });
-                return;
-            }
             const f = currentSaveFilter || "all";
             let saves = currentSaves.filter(sv => {
                 if (f === "char") return getSaveKind(sv) === "char";
@@ -9272,9 +9260,14 @@
                 wrap.innerHTML = '<p class="save-empty">データなし</p>';
                 return;
             }
+            if (_reorderPersonal) {
+                wrap.innerHTML = '<div style="font-size:12px;font-weight:700;color:var(--accent);margin-bottom:6px">🔀 並び替え中（☰ドラッグ or 2枚タップで入替）</div>'
+                    + '<div class="save-list">' + saves.map((sv, idx) => renderSaveCard(sv, false, 'save', idx)).join('') + '</div>';
+                bindGridReorder(wrap.querySelector('.save-list'), saves, () => { if (_personalTagFilter) _tagSaveOrder[_personalTagFilter] = saves.map(x => x.id); renderSaveList(); });
+                return;
+            }
             wrap.innerHTML = '<div style="font-size:12px;font-weight:700;color:var(--text3);margin-bottom:4px">保存済み（' + saves.length + '件）</div><div class="save-list">' + saves.map(sv => renderSaveCard(sv, false, 'save')).join("") + '</div>';
             bindSaveListEvents(wrap);
-            wrap.querySelectorAll('[data-sortbtn]').forEach(el => el.style.display = 'none'); // ↑↓は並び替えモード(ドラッグ)に統合済み
         }
         function showPersonalDeleteDialog(id) { const sv = currentSaves.find(s => s.id === id); if (!sv) return; const overlay = document.createElement("div"); overlay.style.cssText = "position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9000;display:flex;align-items:center;justify-content:center;padding:20px"; overlay.innerHTML = '<div style="background:var(--bg);border-radius:var(--radius-lg);padding:16px;max-width:280px;width:100%;box-shadow:0 8px 32px rgba(0,0,0,.3)"><div style="font-size:15px;font-weight:700;margin-bottom:6px">\u300c' + sv.name + '\u300d\u3092\u524a\u9664</div><div style="font-size:12px;color:var(--text3);margin-bottom:12px;line-height:1.5">\u524a\u9664\u65b9\u6cd5\u3092\u9078\u629e\u3057\u3066\u304f\u3060\u3055\u3044</div><button id="pd-local" style="width:100%;background:var(--bg2);border:0.5px solid var(--border2);border-radius:var(--radius);color:var(--text);cursor:pointer;font-family:inherit;font-size:13px;padding:10px;margin-bottom:6px;text-align:left">\ud83d\udda5 \u81ea\u5206\u306e\u753b\u9762\u304b\u3089\u306e\u307f\u524a\u9664<br><span style="font-size:11px;color:var(--text3)">\u30af\u30e9\u30a6\u30c9\u306b\u306f\u6b8b\u308a\u307e\u3059</span></button><button id="pd-cloud" style="width:100%;background:none;border:0.5px solid var(--danger);border-radius:var(--radius);color:var(--danger);cursor:pointer;font-family:inherit;font-size:13px;padding:10px;margin-bottom:8px;text-align:left">\u2601\ufe0f \u30af\u30e9\u30a6\u30c9\u304b\u3089\u3082\u524a\u9664<br><span style="font-size:11px;opacity:.8">\u6b21\u56de\u53d6\u5f97\u6642\u306b\u5236\u9664\u3055\u308c\u307e\u3059</span></button><button id="pd-cancel" style="width:100%;background:none;border:0.5px solid var(--border2);border-radius:var(--radius);color:var(--text3);cursor:pointer;font-family:inherit;font-size:13px;padding:8px">\u30ad\u30e3\u30f3\u30bb\u30eb</button></div>'; document.body.appendChild(overlay); const close = () => document.body.removeChild(overlay); overlay.querySelector("#pd-cancel").addEventListener("click", close); overlay.addEventListener("click", e => { if (e.target === overlay) close(); }); overlay.querySelector("#pd-local").addEventListener("click", () => { close(); writeSaves(currentSaves.filter(s => s.id !== id)); renderSaveList(); renderKomaSaveList(); renderStatSaveList(); showToast("\u81ea\u5206\u306e\u753b\u9762\u304b\u3089\u524a\u9664\u3057\u307e\u3057\u305f"); }); overlay.querySelector("#pd-cloud").addEventListener("click", async () => { close(); writeSaves(currentSaves.filter(s => s.id !== id)); renderSaveList(); renderKomaSaveList(); renderStatSaveList(); showToast("\u524a\u9664\u4e2d\u2026"); if (syncToken) { const ok = await gistSet({ saves: lSaves(), mythos: { beings: customBeings, spells: customSpells }, tagOrder: _tagOrder }); showToast(ok ? "\u2601\ufe0f \u30af\u30e9\u30a6\u30c9\u304b\u3089\u3082\u524a\u9664\u3057\u307e\u3057\u305f" : "\u26a0 \u30af\u30e9\u30a6\u30c9\u524a\u9664\u5931\u6557\uff08\u30ed\u30fc\u30ab\u30eb\u306f\u524a\u9664\u6e08\uff09"); } else { showToast("\u26a0 \u30c8\u30fc\u30af\u30f3\u672a\u8a2d\u5b9a\uff08\u30ed\u30fc\u30ab\u30eb\u306e\u307f\u524a\u9664\uff09"); } }); }
         function showSharedDeleteDialog(id) {
@@ -9320,13 +9313,6 @@
             const wrap = document.getElementById("shared-list-wrap");
             const reorderBtn = document.getElementById('btn-reorder-shared');
             if (reorderBtn) reorderBtn.style.display = (_sharedTagFilter || _reorderShared) ? '' : 'none';
-            if (_reorderShared) {
-                let arr = lSharedSaves().filter(sv => (sv.tags || []).includes(_sharedTagFilter));
-                arr = _applySavedOrder(arr, _tagSaveOrder[_sharedTagFilter]);
-                wrap.innerHTML = '<div style="font-size:12px;font-weight:700;color:var(--accent);margin-bottom:6px">🔀「' + esc(_sharedTagFilter) + '」タグ内で並び替え中</div>';
-                renderReorderableList(wrap, arr, sv => renderSaveCard(sv, true, 'save'), () => { _tagSaveOrder[_sharedTagFilter] = arr.map(x => x.id); renderSharedList(); });
-                return;
-            }
             const shared = lSharedSaves();
             const filterBar = '<div style="display:flex;align-items:center;gap:3px;margin-bottom:6px;flex-wrap:wrap">'
                 + '<div class="save-filter-bar" style="margin-bottom:0;display:flex;gap:3px;flex-shrink:0">'
@@ -9359,9 +9345,15 @@
                 filtered.sort((a, b) => b.id - a.id); // 全て：時系列登録順（これまで通り）
             }
             if (!shared.length) { wrap.innerHTML = filterBar + '<p class="save-empty">データなし</p>'; return; }
+            if (_reorderShared) {
+                wrap.innerHTML = filterBar + '<div style="font-size:12px;font-weight:700;color:var(--accent);margin-bottom:6px">🔀 並び替え中（☰ドラッグ or 2枚タップで入替）</div>'
+                    + '<div class="save-list">' + filtered.map((sv, idx) => renderSaveCard(sv, true, 'save', idx)).join('') + '</div>';
+                bindGridReorder(wrap.querySelector('.save-list'), filtered, () => { if (_sharedTagFilter) _tagSaveOrder[_sharedTagFilter] = filtered.map(x => x.id); renderSharedList(); });
+                renderTagFilterBar('tag-filter-bar-shared', getSharedTags(), _sharedTagFilter, setSharedTagFilter);
+                return;
+            }
             wrap.innerHTML = filterBar + '<div id="tag-filter-bar-shared-wrap"></div><div style="font-size:12px;font-weight:700;color:var(--text3);margin-bottom:4px">共有データ（' + filtered.length + '件）</div><div class="save-list">' + filtered.map(sv => renderSaveCard(sv, true, 'save')).join("") + '</div>';
             bindSaveListEvents(wrap);
-            wrap.querySelectorAll('[data-sortbtn]').forEach(el => el.style.display = 'none'); // ↑↓は並び替えモード(ドラッグ)に統合済み
             renderTagFilterBar('tag-filter-bar-shared', getSharedTags(), _sharedTagFilter, setSharedTagFilter);
         }
         async function saveDataTo(dest) {
