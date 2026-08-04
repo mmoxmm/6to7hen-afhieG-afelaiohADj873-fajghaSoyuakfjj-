@@ -9069,7 +9069,7 @@
                     if (sv._isKoma) {
                         loadKomaData(sv.id, isShared);
                     } else {
-                        const doExpand = !(document.getElementById('cb-collapse-' + sv.id)?.checked || false);
+                        const doExpand = !sv.collapse;
                         loadDataIntoEditor(sv, doExpand);
                         _lastLoadedStatId = sv.id; _lastLoadedStatShared = isShared;
                         if (sv.komaData) { _lastLoadedKomaId = sv.id; _lastLoadedKomaShared = isShared; }
@@ -9086,19 +9086,28 @@
                     renderSaveList(); renderSharedList(); renderKomaSaveList(); renderStatSaveList();
                 });
             });
-            // 閉じるcheckの変更をsv.collapseに保存してGist同期
-            wrap.querySelectorAll('input[id^="cb-collapse-"]').forEach(cb => {
-                cb.addEventListener("change", () => {
-                    const id = +cb.id.replace("cb-collapse-", "");
-                    const pSv = currentSaves.find(s => s.id === id);
-                    const shSv = lSharedSaves().find(s => s.id === id);
+            // 閉じるボタンのON/OFFをsv.collapseに保存してGist同期
+            wrap.querySelectorAll('.scg-collapse').forEach(btn => {
+                btn.addEventListener("click", () => {
+                    const id = +btn.dataset.id;
+                    const isSharedBtn = btn.dataset.shared === "1";
+                    const pSv = !isSharedBtn ? currentSaves.find(s => s.id === id) : null;
+                    const shSv = isSharedBtn ? lSharedSaves().find(s => s.id === id) : null;
                     if (pSv) {
-                        pSv.collapse = cb.checked;
+                        pSv.collapse = !pSv.collapse;
                         writeSaves(currentSaves);
+                        const on = pSv.collapse;
+                        btn.style.background = on ? 'var(--accent)' : 'none';
+                        btn.style.borderColor = on ? 'var(--accent)' : 'var(--border2)';
+                        btn.style.color = on ? '#fff' : 'var(--text2)';
                         if (syncToken) debounceSave(async () => { await gistSet({ saves: lSaves(), mythos: { beings: customBeings, spells: customSpells }, tagOrder: _tagOrder, tagSaveOrder: _tagSaveOrder }); });
                     } else if (shSv) {
-                        const shList = lSharedSaves().map(s => s.id === id ? { ...s, collapse: cb.checked } : s);
+                        const on = !shSv.collapse;
+                        const shList = lSharedSaves().map(s => s.id === id ? { ...s, collapse: on } : s);
                         wSharedSaves(shList);
+                        btn.style.background = on ? 'var(--accent)' : 'none';
+                        btn.style.borderColor = on ? 'var(--accent)' : 'var(--border2)';
+                        btn.style.color = on ? '#fff' : 'var(--text2)';
                         if (sharedToken) debounceSave(async () => { await sharedGistSet({ saves: lSharedSaves(), tagOrder: _tagOrder, tagSaveOrder: _tagSaveOrder }); });
                     }
                 });
