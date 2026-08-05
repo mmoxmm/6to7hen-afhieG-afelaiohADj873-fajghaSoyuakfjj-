@@ -8722,9 +8722,8 @@
             const dndAttr = dndIndex !== null ? ' data-dnd="' + dndIndex + '"' : '';
             const reorderCls = dndIndex !== null ? ' reorder-card' : '';
 
-            const collapseId = 'cb-collapse-' + sv.id;
-            const collapseChecked = sv.collapse ? ' checked' : '';
-            const collapseHtml = '<label class="scg-collapse" title="読込時にブロックを閉じる" style="display:inline-flex;align-items:center;gap:1px;font-size:9px;color:var(--text3);cursor:pointer;white-space:nowrap;flex-shrink:0"><input type="checkbox" id="' + collapseId + '"' + collapseChecked + ' style="width:10px;height:10px;cursor:pointer;accent-color:var(--accent);margin:0 1px 0 0">閉</label>';
+            const collapseOn = !!sv.collapse;
+            const collapseHtml = kind === 'koma' ? '' : '<button class="scg-collapse" data-id="' + sv.id + '" data-shared="' + (isShared ? 1 : 0) + '" title="読込時にブロックを閉じる" style="font-size:10px;padding:2px 5px;border-radius:4px;cursor:pointer;flex-shrink:0;white-space:nowrap;background:' + (collapseOn ? 'var(--accent)' : 'none') + ';border:0.5px solid ' + (collapseOn ? 'var(--accent)' : 'var(--border2)') + ';color:' + (collapseOn ? '#fff' : 'var(--text2)') + '">閉</button>';
 
             return '<div class="save-card-grid' + reorderCls + '" data-svid="' + sv.id + '"' + dndAttr + ' style="' + cardStyle + '">'
                 + sharedBadge
