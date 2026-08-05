@@ -8636,8 +8636,8 @@
             const cardBg = hexToRgba50(sv.color);
             const cardStyle = cardBg ? 'background:' + cardBg + ';' : '';
             const ownerBadgeHtml = isShared
-                ? '<span style="font-size:11px;color:#fff;background:var(--success);width:18px;height:18px;border-radius:4px;display:flex;align-items:center;justify-content:center;line-height:1;flex-shrink:0;box-shadow:0 1px 2px rgba(0,0,0,.15)">👥</span>'
-                : '<span style="font-size:11px;color:#fff;background:var(--accent);width:18px;height:18px;border-radius:4px;display:flex;align-items:center;justify-content:center;line-height:1;flex-shrink:0;box-shadow:0 1px 2px rgba(0,0,0,.15)">👤</span>';
+                ? '<span style="font-size:11px;font-weight:700;color:#fff;background:var(--success);width:18px;height:18px;border-radius:4px;display:flex;align-items:center;justify-content:center;line-height:1;flex-shrink:0;box-shadow:0 1px 2px rgba(0,0,0,.15)">共</span>'
+                : '<span style="font-size:11px;font-weight:700;color:#fff;background:var(--accent);width:18px;height:18px;border-radius:4px;display:flex;align-items:center;justify-content:center;line-height:1;flex-shrink:0;box-shadow:0 1px 2px rgba(0,0,0,.15)">個</span>';
 
             const chip = (bg, color, border, inner) =>
                 '<span style="display:inline-flex;align-items:center;height:16px;padding:0 4px;border-radius:3px;border:0.5px solid ' + border + ';background:' + bg + ';color:' + color + ';font-size:10px;font-weight:600;line-height:1;white-space:nowrap;margin:1px 2px 0 0;">' + inner + '</span>';
@@ -8715,7 +8715,8 @@
             const tagsHtml = tags.map(t => '<span class="tag-chip-filter" style="display:inline-flex;align-items:center;height:15px;padding:0 4px;border-radius:3px;background:var(--bg);border:0.5px solid var(--border2);color:var(--text2);font-size:10px;font-weight:600;cursor:pointer;white-space:nowrap;margin:1px 2px 0 0;" data-tag-filter="' + esc(t) + '" data-tag-name="' + esc(t) + '" data-id="' + sv.id + '" data-shared="' + (isShared ? 1 : 0) + '" data-caller="' + callerTab + '">' + esc(t) + '</span>').join('')
                 + '<span class="btn-tag-add" style="display:inline-flex;align-items:center;height:15px;padding:0 4px;border-radius:3px;background:var(--bg);border:0.5px dashed var(--border2);color:var(--text3);font-size:10px;cursor:pointer;" data-id="' + sv.id + '" data-shared="' + (isShared ? 1 : 0) + '">＋</span>';
 
-            const toggleBtn = kind === 'both' ? '<button class="scg-toggle" data-id="' + sv.id + '" style="font-size:10px;padding:2px 5px;border-radius:4px;cursor:pointer;background:none;border:0.5px solid var(--accent);color:var(--accent);flex-shrink:0;white-space:nowrap" title="ステータス/コマ表示切替">コマ</button>' : '';
+            const toggleBtnLabel = viewMode === 'koma' ? 'ステータス' : 'コマ';
+            const toggleBtn = kind === 'both' ? '<button class="scg-toggle" data-id="' + sv.id + '" style="font-size:10px;padding:2px 5px;border-radius:4px;cursor:pointer;background:none;border:0.5px solid var(--accent);color:var(--accent);flex-shrink:0;white-space:nowrap" title="ステータス/コマ表示切替">' + toggleBtnLabel + '</button>' : '';
             const komaName = (kind === 'both' && viewMode === 'koma' && sv.komaData) ? (sv.komaData.name || '') : '';
             const showName = (komaName && komaName !== '（名称なし）' && komaName !== sv.name) ? komaName : sv.name;
 
