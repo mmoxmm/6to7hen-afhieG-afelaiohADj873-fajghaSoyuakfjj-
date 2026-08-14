@@ -2432,16 +2432,18 @@
             <button class="seg-btn" onclick="convertInputMode()" id="btn-mode-conv"
                 style="background:var(--warn-bg);border-color:var(--warn);color:var(--warn);font-size:11px;flex-shrink:0;padding:3px 6px;white-space:nowrap"
                 title="入力済みの値を7版%⇄6版値として正しく変換して切り替え">🔀変換</button>
-            <button class="seg-btn" id="btn-stat-undo" onclick="undoStatHistory()"
-                style="flex-shrink:0;padding:3px 6px" title="元に戻す">↶</button>
-            <button class="seg-btn" id="btn-stat-redo" onclick="redoStatHistory()"
-                style="flex-shrink:0;padding:3px 6px" title="やり直す">↷</button>
+            <button class="seg-btn" id="btn-stat-undo" onclick="undoStatHistory()" style="flex-shrink:0;padding:3px 6px"
+                title="元に戻す">↶</button>
+            <button class="seg-btn" id="btn-stat-redo" onclick="redoStatHistory()" style="flex-shrink:0;padding:3px 6px"
+                title="やり直す">↷</button>
             <button class="seg-btn" id="btn-stat-sign" onclick="toggleStatSign()"
-                style="flex-shrink:0;padding:3px 4px;width:24px;color:var(--accent);font-weight:700" title="＋／－切替">＋</button>
+                style="flex-shrink:0;padding:3px 4px;width:24px;color:var(--accent);font-weight:700"
+                title="＋／－切替">＋</button>
             <input type="number" id="stat-delta-input" placeholder="%"
                 style="width:48px;flex-shrink:0;padding:3px 4px;font-size:12px;height:24px;background:var(--bg2);border:0.5px solid var(--border2);border-radius:4px;color:var(--text);text-align:center">
             <button class="seg-btn" onclick="applyStatDelta()"
-                style="background:var(--accent);border-color:var(--accent);color:#fff;flex-shrink:0;padding:3px 6px;white-space:nowrap" title="全ステータスに増減を適用">実行</button>
+                style="background:var(--accent);border-color:var(--accent);color:#fff;flex-shrink:0;padding:3px 6px;white-space:nowrap"
+                title="全ステータスに増減を適用">実行</button>
             <span id="mode-hint" style="display:none"></span>
             <span style="flex:1;min-width:4px"></span>
             <span id="current-card-name"
@@ -9977,21 +9979,21 @@
             showToast((_statSign === 1 ? '＋' : '－') + raw + '% を全ステータスに適用しました');
         }
 
-function convertInputMode() {
-    const newMode = inputMode === 6 ? 7 : 6;
-    // 現在“画面に表示されている数字”を、そのまま「newMode としての入力値」とみなして
-    // 内部保持値（vals＝常に7版%）を作り直す
-    STATS.forEach(({ key }) => {
-        const inp = document.querySelector('.sg-inp[data-key="' + key + '"]');
-        const raw = inp ? (parseInt(inp.value) || 0) : 0;
-        vals[key] = raw > 0 ? (newMode === 6 ? raw * 5 : raw) : 0;
-    });
-    setInputMode(newMode);
-    pushStatHistory();
-    showToast(newMode === 6
-        ? '🔄 表示中の数値を6版データとして登録し直しました'
-        : '🔄 表示中の数値を7版データとして登録し直しました');
-}
+        function convertInputMode() {
+            const newMode = inputMode === 6 ? 7 : 6;
+            // 現在“画面に表示されている数字”を、そのまま「newMode としての入力値」とみなして
+            // 内部保持値（vals＝常に7版%）を作り直す
+            STATS.forEach(({ key }) => {
+                const inp = document.querySelector('.sg-inp[data-key="' + key + '"]');
+                const raw = inp ? (parseInt(inp.value) || 0) : 0;
+                vals[key] = raw > 0 ? (newMode === 6 ? raw * 5 : raw) : 0;
+            });
+            setInputMode(newMode);
+            pushStatHistory();
+            showToast(newMode === 6
+                ? '🔄 表示中の数値を6版データとして登録し直しました'
+                : '🔄 表示中の数値を7版データとして登録し直しました');
+        }
 
         pushStatHistory();
 
