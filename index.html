@@ -2458,6 +2458,9 @@
             <button class="seg-btn" onclick="quickOverwriteAllTabs()" id="btn-modebar-overwrite-all"
                 style="background:var(--danger-bg);border-color:var(--danger);color:var(--danger);flex-shrink:0;padding:3px 6px;white-space:nowrap"
                 title="タブの選択に関係なく、ステータス＋コマの両方を強制上書き">🔁全上書</button>
+            <button class="seg-btn" onclick="reloadCurrentCard()" id="btn-modebar-reload"
+                style="background:var(--bg2);border-color:var(--accent);color:var(--accent);flex-shrink:0;padding:3px 6px;white-space:nowrap"
+                title="直近に読み込んだ保存カードの状態を再読込（現在の未保存の変更は破棄されます）">🔄再読込</button>
         </div>
         <div style="display:flex;gap:4px;align-items:center;margin-bottom:5px">
             <div style="display:flex;align-items:center;gap:3px;flex:2">
@@ -4536,6 +4539,31 @@
             });
         }
 
+        // ===== 🔄 直近に読み込んだ保存カードの状態へ再読込（未保存の編集を破棄） =====
+        function reloadCurrentCard() {
+            const id = _lastLoadedStatId || _lastLoadedKomaId;
+            if (!id) { showToast("先に読み込んだカードがありません"); return; }
+            const isShared = _lastLoadedStatId ? _lastLoadedStatShared : _lastLoadedKomaShared;
+            const list = isShared ? lSharedSaves() : currentSaves;
+            const sv = list.find(s => s.id === id);
+            if (!sv) { showToast("保存データが見つかりません"); return; }
+            showStyledConfirm({
+                title: "🔄 再読込確認",
+                bodyHtml: "現在の未保存の編集内容を破棄し、「<strong style='color:var(--text)'>" + esc(sv.name) + "</strong>」の保存済みの状態を再読込します。",
+                confirmLabel: "🔄 再読込する",
+                confirmColor: "var(--accent)",
+                onConfirm: () => {
+                    if (sv._isKoma && !sv.komaData) {
+                        loadKomaData(sv.id, isShared);
+                    } else {
+                        loadDataIntoEditor(sv, true);
+                    }
+                    pushStatHistory();
+                    showToast("「" + sv.name + "」を再読込しました");
+                }
+            });
+        }
+
         let _sharedFilter = "all";
         let _personalTagFilter = null; // null=全て、string=タグ名
         let _sharedTagFilter = null;
@@ -6396,7 +6424,7 @@
                 lbl2.addEventListener("focus", () => { lbl2.style.pointerEvents = "auto"; lbl2.style.userSelect = "auto"; lbl2.style.background = "var(--bg2)"; lbl2.style.borderRadius = "3px"; lbl2.style.padding = "2px 4px"; });
                 lbl2.addEventListener("blur", () => { lbl2.style.pointerEvents = "none"; lbl2.style.userSelect = "none"; lbl2.style.background = "transparent"; lbl2.style.padding = "2px 0"; }); lblWrap.append(lbl, lbl2); const btnCol = document.createElement("div"); btnCol.style.cssText = "display:grid;grid-template-columns:1fr;gap:2px;flex-shrink:0;"; lbl.placeholder = "タイトル（ダブルタップで編集）"; lbl.rows = 2; lbl.style.cssText = "flex:1;min-width:0;font-size:13px;font-weight:600;background:transparent;border:none;padding:2px 0;resize:none;overflow:hidden;outline:none;color:var(--text);pointer-events:none;user-select:none;";
                 lbl.addEventListener("focus", () => { lbl.style.pointerEvents = "auto"; lbl.style.userSelect = "auto"; lbl.style.background = "var(--bg2)"; lbl.style.borderRadius = "3px"; lbl.style.padding = "2px 4px"; });
-                lbl.addEventListener("blur", () => { lbl.style.pointerEvents = "none"; lbl.style.userSelect = "none"; lbl.style.background = "transparent"; lbl.style.padding = "2px 0"; }); const tBtn = document.createElement("button"); tBtn.style.cssText = "background:none;border:none;color:var(--text3);font-size:11px;cursor:pointer;padding:0 2px;flex-shrink:0;transition:transform .2s"; tBtn.textContent = "\u25bc"; const dr = document.createElement("div"); dr.className = "memo-dest-toggle"; dr.style.cssText = "display:grid;grid-template-columns:1fr 1fr;gap:2px;flex-shrink:0"; const bM = document.createElement("button"); bM.className = "memo-dest-btn" + (m.dest === "memo" ? " act-memo" : ""); bM.textContent = "\u30e1\u30e2"; const bC = document.createElement("button"); bC.className = "memo-dest-btn" + (m.dest === "cmd" ? " act-cmd" : ""); bC.textContent = "\u30d1\u30ec"; const bB = document.createElement("button"); bB.className = "memo-dest-btn" + (m.dest === "both" ? " act-memo" : ""); bB.textContent = "\u4e21\u65b9"; const bN = document.createElement("button"); bN.className = "memo-dest-btn" + (m.dest === "none" ? " act-none" : ""); bN.textContent = "\u306a\u3057"; dr.append(bM, bC, bB, bN); const cpBtn = document.createElement("button"); cpBtn.className = "memo-copy-btn"; cpBtn.textContent = "\ud83d\udccb"; const dlBtn = document.createElement("button"); dlBtn.textContent = "\u00d7"; dlBtn.style.cssText = "background:none;border:0.5px solid var(--border2);border-radius:3px;color:var(--text3);cursor:pointer;font-size:12px;padding:2px 5px;flex-shrink:0"; btnCol.append(cpBtn, dlBtn); hd.append(dh, lblWrap, tBtn, dr, btnCol); const bd = document.createElement("div"); bd.style.cssText = "padding:4px 6px;background:var(--bg2);" + (m._collapsed ? "display:none" : "display:block"); const ct = document.createElement("textarea"); ct.placeholder = "\u30e1\u30e2\u5185\u5bb9..."; ct.value = m.content; ct.rows = 1; ct.style.cssText = "width:100%;font-size:13px;background:var(--bg2);border:none;padding:2px 0;min-height:28px;resize:none;overflow:hidden;outline:none;color:var(--text)"; bd.appendChild(ct); row.append(hd, bd); wrap.appendChild(row); const setD = (d) => { m.dest = d; bM.className = "memo-dest-btn" + (d === "memo" || d === "both" ? " act-memo" : ""); bC.className = "memo-dest-btn" + (d === "cmd" || d === "both" ? " act-cmd" : ""); bB.className = "memo-dest-btn" + (d === "both" ? " act-memo" : ""); bN.className = "memo-dest-btn" + (d === "none" ? " act-none" : ""); saveMemoLocal(); updateExport(); renderPalettePreview(); }; bM.addEventListener("click", e => { e.stopPropagation(); setD("memo"); }); bC.addEventListener("click", e => { e.stopPropagation(); setD("cmd"); }); bB.addEventListener("click", e => { e.stopPropagation(); setD("both"); }); bN.addEventListener("click", e => { e.stopPropagation(); setD("none"); }); const doTg = () => { m._collapsed = !m._collapsed; bd.style.display = m._collapsed ? "none" : "block"; tBtn.style.transform = m._collapsed ? "rotate(-90deg)" : ""; if (!m._collapsed) reExpandAllMemos(); };
+                lbl.addEventListener("blur", () => { lbl.style.pointerEvents = "none"; lbl.style.userSelect = "none"; lbl.style.background = "transparent"; lbl.style.padding = "2px 0"; }); const tBtn = document.createElement("button"); tBtn.style.cssText = "background:none;border:none;color:var(--text3);font-size:11px;cursor:pointer;padding:0 2px;flex-shrink:0;transition:transform .2s"; tBtn.textContent = "\u25bc"; const dr = document.createElement("div"); dr.className = "memo-dest-toggle"; dr.style.cssText = "display:grid;grid-template-columns:1fr 1fr;gap:2px;flex-shrink:0"; const bM = document.createElement("button"); bM.className = "memo-dest-btn" + (m.dest === "memo" ? " act-memo" : ""); bM.textContent = "\u30e1\u30e2"; const bC = document.createElement("button"); bC.className = "memo-dest-btn" + (m.dest === "cmd" ? " act-cmd" : ""); bC.textContent = "\u30d1\u30ec"; const bB = document.createElement("button"); bB.className = "memo-dest-btn" + (m.dest === "both" ? " act-memo" : ""); bB.textContent = "\u4e21\u65b9"; const bN = document.createElement("button"); bN.className = "memo-dest-btn" + (m.dest === "none" ? " act-none" : ""); bN.textContent = "\u306a\u3057"; dr.append(bM, bC, bB, bN); const cpBtn = document.createElement("button"); cpBtn.className = "memo-copy-btn"; cpBtn.textContent = "\ud83d\udccb"; const dlBtn = document.createElement("button"); dlBtn.textContent = "\u00d7"; dlBtn.style.cssText = "background:none;border:0.5px solid var(--border2);border-radius:3px;color:var(--text3);cursor:pointer;font-size:12px;padding:2px 5px;flex-shrink:0"; dlBtn.classList.add("hist-mut"); btnCol.append(cpBtn, dlBtn); hd.append(dh, lblWrap, tBtn, dr, btnCol); const bd = document.createElement("div"); bd.style.cssText = "padding:4px 6px;background:var(--bg2);" + (m._collapsed ? "display:none" : "display:block"); const ct = document.createElement("textarea"); ct.placeholder = "\u30e1\u30e2\u5185\u5bb9..."; ct.value = m.content; ct.rows = 1; ct.style.cssText = "width:100%;font-size:13px;background:var(--bg2);border:none;padding:2px 0;min-height:28px;resize:none;overflow:hidden;outline:none;color:var(--text)"; bd.appendChild(ct); row.append(hd, bd); wrap.appendChild(row); const setD = (d) => { m.dest = d; bM.className = "memo-dest-btn" + (d === "memo" || d === "both" ? " act-memo" : ""); bC.className = "memo-dest-btn" + (d === "cmd" || d === "both" ? " act-cmd" : ""); bB.className = "memo-dest-btn" + (d === "both" ? " act-memo" : ""); bN.className = "memo-dest-btn" + (d === "none" ? " act-none" : ""); saveMemoLocal(); updateExport(); renderPalettePreview(); }; bM.addEventListener("click", e => { e.stopPropagation(); setD("memo"); }); bC.addEventListener("click", e => { e.stopPropagation(); setD("cmd"); }); bB.addEventListener("click", e => { e.stopPropagation(); setD("both"); }); bN.addEventListener("click", e => { e.stopPropagation(); setD("none"); }); const doTg = () => { m._collapsed = !m._collapsed; bd.style.display = m._collapsed ? "none" : "block"; tBtn.style.transform = m._collapsed ? "rotate(-90deg)" : ""; if (!m._collapsed) reExpandAllMemos(); };
                 tBtn.addEventListener("click", e => { e.stopPropagation(); doTg(); });
                 hd.addEventListener("click", e => {
                     if ([cpBtn, dlBtn, tBtn, dh].includes(e.target) || dr.contains(e.target)) return;
@@ -9854,31 +9882,53 @@
             return _origGistSet(payload);
         };
 
-        // ===== ステータス編集履歴（Undo/Redo） =====
+        // ===== 編集履歴（Undo/Redo）※ステータスタブの全入力（特性値・派生値・攻撃・技能・呪文・
+        // 消耗品・追加ステータス・MEMO・NPC名/色・手書きパレット等）を対象 =====
         let _statHistory = [];
         let _statHistoryIdx = -1;
         let _statSign = 1;
+        let _histSuspend = false; // 復元処理中はpush禁止（二重登録防止）
+        let _histDebounceTimer = null;
 
         function snapshotStatState() {
-            const snap = {};
-            STATS.forEach(({ key }) => { snap[key] = vals[key] || 0; });
-            return { vals: snap, mode: inputMode, ov: { ...ov }, ovManual: { ...ovManual } };
+            return { mode: inputMode, data: JSON.parse(JSON.stringify(getCurrentData())) };
         }
 
         function pushStatHistory() {
+            if (_histSuspend) return;
             _statHistory = _statHistory.slice(0, _statHistoryIdx + 1);
             _statHistory.push(snapshotStatState());
-            if (_statHistory.length > 5) _statHistory.shift();
+            if (_statHistory.length > 20) _statHistory.shift();
             _statHistoryIdx = _statHistory.length - 1;
             updateUndoRedoButtons();
         }
 
         function applyStatState(state) {
-            STATS.forEach(({ key }) => { vals[key] = state.vals[key] || 0; });
-            if (state.ov) { ["hp", "mp", "san", "luck"].forEach(k => { ov[k] = state.ov[k] || 0; ovManual[k] = !!(state.ovManual && state.ovManual[k]); }); }
+            _histSuspend = true;
             setInputMode(state.mode);
-            buildDerivedRows();
+            loadDataIntoEditor(state.data, true);
+            _histSuspend = false;
         }
+
+        // 手動編集を自動検知して履歴に積む（テキスト入力は800msデバウンス、ボタン操作は即時）
+        document.addEventListener("input", e => {
+            const t = e.target;
+            if (_histSuspend) return;
+            if (!(t.matches && t.matches("input, textarea"))) return;
+            if (t.id === "parse-input") return; // 解析用スクラッチ欄は対象外
+            const inScope = t.closest("#tab-stats") || t.id === "npc-name" || t.id === "npc-color";
+            if (!inScope) return;
+            if (_histDebounceTimer) { clearTimeout(_histDebounceTimer); }
+            else { pushStatHistory(); }
+            _histDebounceTimer = setTimeout(() => { _histDebounceTimer = null; }, 800);
+        }, true);
+        document.addEventListener("click", e => {
+            if (_histSuspend) return;
+            const t = e.target.closest(".btn-remove, .sg-clr, .dv-clr, .db-cycle-btn, .memo-dest-btn, .btn-add, .hist-mut");
+            if (!t) return;
+            if (!t.closest("#tab-stats")) return;
+            pushStatHistory();
+        }, true);
 
         function undoStatHistory() {
             if (_statHistoryIdx <= 0) { showToast('これ以上戻れません'); return; }
