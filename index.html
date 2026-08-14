@@ -7639,8 +7639,8 @@
             splList.forEach(s => {
                 if (s._sep) { splBlock.push({ text: s.label || "━━━━━━━━━━━━━━━━━━", key: "splsep_" + s.id, isSep: true }); return; }
                 if (!s.name) return;
-                const mainTxt = s.name + (s.mp ? " (MP:" + s.mp + ")" : "");
-                splBlock.push({ text: mainTxt, key: "spl_" + s.id });
+                splBlock.push({ text: s.name, key: "spl_" + s.id });
+                if (s.mp) splBlock.push({ text: ":MP-" + s.mp, key: "splmp_" + s.id, _spellNote: true });
                 if (s.note) splBlock.push({ text: s.note, key: "splnote_" + s.id, _spellNote: true });
             });
 
