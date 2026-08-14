@@ -2431,7 +2431,17 @@
                 style="flex-shrink:0;padding:3px 6px">7版</button>
             <button class="seg-btn" onclick="convertInputMode()" id="btn-mode-conv"
                 style="background:var(--warn-bg);border-color:var(--warn);color:var(--warn);font-size:11px;flex-shrink:0;padding:3px 6px;white-space:nowrap"
-                title="入力済みの値をそのまま別バージョンに変換して切り替え">🔀変換</button>
+                title="入力済みの値を7版%⇄6版値として正しく変換して切り替え">🔀変換</button>
+            <button class="seg-btn" id="btn-stat-undo" onclick="undoStatHistory()"
+                style="flex-shrink:0;padding:3px 6px" title="元に戻す">↶</button>
+            <button class="seg-btn" id="btn-stat-redo" onclick="redoStatHistory()"
+                style="flex-shrink:0;padding:3px 6px" title="やり直す">↷</button>
+            <button class="seg-btn" id="btn-stat-sign" onclick="toggleStatSign()"
+                style="flex-shrink:0;padding:3px 4px;width:24px;color:var(--accent);font-weight:700" title="＋／－切替">＋</button>
+            <input type="number" id="stat-delta-input" placeholder="%"
+                style="width:48px;flex-shrink:0;padding:3px 4px;font-size:12px;height:24px;background:var(--bg2);border:0.5px solid var(--border2);border-radius:4px;color:var(--text);text-align:center">
+            <button class="seg-btn" onclick="applyStatDelta()"
+                style="background:var(--accent);border-color:var(--accent);color:#fff;flex-shrink:0;padding:3px 6px;white-space:nowrap" title="全ステータスに増減を適用">実行</button>
             <span id="mode-hint" style="display:none"></span>
             <span style="flex:1;min-width:4px"></span>
             <span id="current-card-name"
@@ -6273,7 +6283,7 @@
                     const all = [...document.querySelectorAll(".sg-inp[data-key]"), ...document.querySelectorAll(".dv-inp")];
                     const i = all.indexOf(inp);
                     if (i >= 0 && i < all.length - 1) all[i + 1].focus();
-                }); inp.addEventListener("input", e => { const raw = parseInt(e.target.value) || 0; clr.style.display = raw > 0 ? "block" : "none"; vals[key] = inputMode === 6 ? raw * 5 : raw; updateStatDisplay(); }); clr.addEventListener("click", () => { inp.value = ""; vals[key] = 0; clr.style.display = "none"; updateStatDisplay(); });
+                }); inp.addEventListener("input", e => { if (!inp.dataset.histPushed) { pushStatHistory(); inp.dataset.histPushed = "1"; } const raw = parseInt(e.target.value) || 0; clr.style.display = raw > 0 ? "block" : "none"; vals[key] = inputMode === 6 ? raw * 5 : raw; updateStatDisplay(); }); inp.addEventListener("blur", () => { inp.dataset.histPushed = ""; }); clr.addEventListener("click", () => { pushStatHistory(); inp.value = ""; vals[key] = 0; clr.style.display = "none"; updateStatDisplay(); });
             }); buildDerivedRows(); setTimeout(buildCustomFieldRows, 0);
         }
         function buildCustomFieldRows() {
@@ -6349,7 +6359,7 @@
                     const all = [...document.querySelectorAll(".sg-inp[data-key]"), ...document.querySelectorAll(".dv-inp")];
                     const i = all.indexOf(inp);
                     if (i >= 0 && i < all.length - 1) all[i + 1].focus();
-                }); inp.addEventListener("input", e => { ov[key] = parseInt(e.target.value) || 0; ovManual[key] = e.target.value !== ""; clr.style.display = e.target.value ? "block" : "none"; updDerived(key); updateExport(); }); clr.addEventListener("click", () => { inp.value = ""; ov[key] = 0; ovManual[key] = false; clr.style.display = "none"; updDerived(key); updateExport(); });
+                }); inp.addEventListener("input", e => { if (!inp.dataset.histPushed) { pushStatHistory(); inp.dataset.histPushed = "1"; } ov[key] = parseInt(e.target.value) || 0; ovManual[key] = e.target.value !== ""; clr.style.display = e.target.value ? "block" : "none"; updDerived(key); updateExport(); }); inp.addEventListener("blur", () => { inp.dataset.histPushed = ""; }); clr.addEventListener("click", () => { pushStatHistory(); inp.value = ""; ov[key] = 0; ovManual[key] = false; clr.style.display = "none"; updDerived(key); updateExport(); });
             })
         }
         const DERIVED_LABELS = { hp: "HP", mp: "MP", san: "SAN", luck: "\u5e78\u904b" };
@@ -9844,22 +9854,96 @@
             return _origGistSet(payload);
         };
 
-        function convertInputMode() {
-            const newMode = inputMode === 6 ? 7 : 6;
-            STATS.forEach(({ key }) => {
-                const v = vals[key] || 0;
-                if (!v) return;
-                if (inputMode === 6) {
-                    // 6版モードで入力 → vals は入力値×5 → 入力値そのまま7版%として再解釈
-                    vals[key] = Math.round(v / 5); // ×5を戻して生の入力値に
-                } else {
-                    // 7版モードで入力 → vals は入力値そのまま → ×5して6版基準に変換
-                    vals[key] = v * 5;
-                }
-            });
-            setInputMode(newMode);
-            showToast(newMode === 7 ? '🔄 6版入力値→7版%として再解釈しました' : '🔄 7版%→6版値として再解釈しました');
+        // ===== ステータス編集履歴（Undo/Redo） =====
+        let _statHistory = [];
+        let _statHistoryIdx = -1;
+        let _statSign = 1;
+
+        function snapshotStatState() {
+            const snap = {};
+            STATS.forEach(({ key }) => { snap[key] = vals[key] || 0; });
+            return { vals: snap, mode: inputMode, ov: { ...ov }, ovManual: { ...ovManual } };
         }
+
+        function pushStatHistory() {
+            _statHistory = _statHistory.slice(0, _statHistoryIdx + 1);
+            _statHistory.push(snapshotStatState());
+            if (_statHistory.length > 5) _statHistory.shift();
+            _statHistoryIdx = _statHistory.length - 1;
+            updateUndoRedoButtons();
+        }
+
+        function applyStatState(state) {
+            STATS.forEach(({ key }) => { vals[key] = state.vals[key] || 0; });
+            if (state.ov) { ["hp", "mp", "san", "luck"].forEach(k => { ov[k] = state.ov[k] || 0; ovManual[k] = !!(state.ovManual && state.ovManual[k]); }); }
+            setInputMode(state.mode);
+            buildDerivedRows();
+        }
+
+        function undoStatHistory() {
+            if (_statHistoryIdx <= 0) { showToast('これ以上戻れません'); return; }
+            _statHistoryIdx--;
+            applyStatState(_statHistory[_statHistoryIdx]);
+            updateUndoRedoButtons();
+            showToast('↶ 元に戻しました');
+        }
+
+        function redoStatHistory() {
+            if (_statHistoryIdx >= _statHistory.length - 1) { showToast('これ以上進めません'); return; }
+            _statHistoryIdx++;
+            applyStatState(_statHistory[_statHistoryIdx]);
+            updateUndoRedoButtons();
+            showToast('↷ やり直しました');
+        }
+
+        function updateUndoRedoButtons() {
+            const u = document.getElementById('btn-stat-undo');
+            const r = document.getElementById('btn-stat-redo');
+            if (u) u.style.opacity = _statHistoryIdx <= 0 ? '0.35' : '1';
+            if (r) r.style.opacity = (_statHistoryIdx >= _statHistory.length - 1) ? '0.35' : '1';
+        }
+
+        function toggleStatSign() {
+            _statSign = _statSign === 1 ? -1 : 1;
+            const btn = document.getElementById('btn-stat-sign');
+            if (btn) { btn.textContent = _statSign === 1 ? '＋' : '－'; btn.style.color = _statSign === 1 ? 'var(--accent)' : 'var(--danger)'; }
+        }
+
+        function applyStatDelta() {
+            const inp = document.getElementById('stat-delta-input');
+            const raw = parseInt(inp?.value) || 0;
+            if (!raw) { showToast('数値を入力してください'); return; }
+            const delta = raw * _statSign;
+            let changed = 0;
+            STATS.forEach(({ key }) => {
+                const cur = vals[key] || 0;
+                if (cur <= 0) return;
+                vals[key] = Math.max(0, Math.min(999, cur + delta));
+                changed++;
+            });
+            if (!changed) { showToast('対象ステータス（入力済み）がありません'); return; }
+            setInputMode(inputMode);
+            pushStatHistory();
+            showToast((_statSign === 1 ? '＋' : '－') + raw + '% を全ステータスに適用しました');
+        }
+
+function convertInputMode() {
+    const newMode = inputMode === 6 ? 7 : 6;
+    // 現在“画面に表示されている数字”を、そのまま「newMode としての入力値」とみなして
+    // 内部保持値（vals＝常に7版%）を作り直す
+    STATS.forEach(({ key }) => {
+        const inp = document.querySelector('.sg-inp[data-key="' + key + '"]');
+        const raw = inp ? (parseInt(inp.value) || 0) : 0;
+        vals[key] = raw > 0 ? (newMode === 6 ? raw * 5 : raw) : 0;
+    });
+    setInputMode(newMode);
+    pushStatHistory();
+    showToast(newMode === 6
+        ? '🔄 表示中の数値を6版データとして登録し直しました'
+        : '🔄 表示中の数値を7版データとして登録し直しました');
+}
+
+        pushStatHistory();
 
         function transferKomaParamToStatParam() {
             const params = (currentKoma.paramList || []).filter(p => !p._sep && p.label);
