@@ -9099,10 +9099,14 @@
             let _sortSaveTimer = null;
             const debounceSave = (fn) => { clearTimeout(_sortSaveTimer); _sortSaveTimer = setTimeout(fn, 300); };
             // 読込ボタン（展開CBを参照）
-            wrap.querySelectorAll(".scg-name").forEach(el => {
-                el.addEventListener("click", () => {
-                    const isShared = el.dataset.shared === "1";
-                    const id = +el.dataset.id;
+            wrap.querySelectorAll(".save-card-grid").forEach(card => {
+                card.addEventListener("click", e => {
+                    // ボタン・タグ・トグル等のクリックはそちらの機能を優先し、カード読込は発火させない
+                    if (e.target.closest(".btn-update,.btn-delete,.scg-toggle,.tag-chip-filter,.btn-tag-add,.scg-collapse,input,button")) return;
+                    const nameEl = card.querySelector(".scg-name");
+                    if (!nameEl) return;
+                    const isShared = nameEl.dataset.shared === "1";
+                    const id = +nameEl.dataset.id;
                     const list = isShared ? lSharedSaves() : currentSaves;
                     const sv = list.find(s => s.id === id);
                     if (!sv) return;
