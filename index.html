@@ -2392,6 +2392,22 @@
             white-space: pre-wrap
         }
 
+        /* 固定ロール（自由編集）テキストエリア */
+        .fixed-roll-edit {
+            width: 100%;
+            min-height: 120px;
+            font-family: 'SF Mono', Consolas, monospace;
+            font-size: 11px;
+            line-height: 1.7;
+            color: var(--text);
+            background: rgba(40, 85, 160, 0.07);
+            border: 1px solid rgba(40, 85, 160, 0.35);
+            border-radius: var(--radius);
+            padding: 4px 5px;
+            resize: vertical;
+            white-space: pre;
+        }
+
         #koma-label-rows .koma-label-text::placeholder,
         #koma-status-rows input::placeholder,
         #koma-param-rows input::placeholder {
@@ -2943,11 +2959,11 @@
                                             <input type="checkbox" id="chk-fixed-san-stat" checked
                                                 onchange="syncFixedSanCheck(this)"
                                                 style="cursor:pointer;accent-color:var(--accent);width:14px;height:14px">
-                                            🎲 固定ロール3行
+                                            📍 固定ロール（自由編集）
                                         </label>
-                                        <div class="secret-cmd-preview" id="fixed-roll-preview3">CC&lt;={SAN} 【正気度ロール】
-                                            CC&lt;={INT} 【アイデア】
-                                            CC&lt;={幸運} 【幸運】</div>
+                                        <textarea class="fixed-roll-edit" id="fixed-roll-edit3" rows="6"
+                                            oninput="syncFixedRollText(this)"
+                                            placeholder="CC&lt;={SAN} 【正気度ロール】"></textarea>
                                     </div>
                                     <div
                                         style="margin-top:6px;padding-top:6px;border-top:0.5px dashed var(--border2);flex:1;display:flex;flex-direction:column;justify-content:center">
@@ -3880,12 +3896,11 @@
                                                         <input type="checkbox" id="chk-fixed-san" checked
                                                             onchange="syncFixedSanCheck(this)"
                                                             style="cursor:pointer;accent-color:var(--accent);width:14px;height:14px">
-                                                        🎲 固定ロール3行
+                                                        📍 固定ロール（自由編集）
                                                     </label>
-                                                    <div class="secret-cmd-preview" id="fixed-roll-preview">CC&lt;={SAN}
-                                                        【正気度ロール】
-                                                        CC&lt;={INT} 【アイデア】
-                                                        CC&lt;={幸運} 【幸運】</div>
+                                                    <textarea class="fixed-roll-edit" id="fixed-roll-edit" rows="6"
+                                                        oninput="syncFixedRollText(this)"
+                                                        placeholder="CC&lt;={SAN} 【正気度ロール】"></textarea>
                                                 </div>
                                                 <div
                                                     style="margin-top:6px;padding-top:6px;border-top:0.5px dashed var(--border2);flex:1;display:flex;flex-direction:column;justify-content:center">
@@ -4156,12 +4171,11 @@
                                                         <input type="checkbox" id="chk-fixed-san2" checked
                                                             onchange="syncFixedSanCheck(this)"
                                                             style="cursor:pointer;accent-color:var(--accent);width:14px;height:14px">
-                                                        🎲 固定ロール3行
+                                                        📍 固定ロール（自由編集）
                                                     </label>
-                                                    <div class="secret-cmd-preview" id="fixed-roll-preview2">
-                                                        CC&lt;={SAN} 【正気度ロール】
-                                                        CC&lt;={INT} 【アイデア】
-                                                        CC&lt;={幸運} 【幸運】</div>
+                                                    <textarea class="fixed-roll-edit" id="fixed-roll-edit2" rows="6"
+                                                        oninput="syncFixedRollText(this)"
+                                                        placeholder="CC&lt;={SAN} 【正気度ロール】"></textarea>
                                                 </div>
                                                 <div
                                                     style="margin-top:6px;padding-top:6px;border-top:0.5px dashed var(--border2);flex:1;display:flex;flex-direction:column;justify-content:center">
@@ -5862,14 +5876,6 @@
                 el.textContent = on ? lines.join("\n") : "（チェックをONにすると表示）";
             });
 
-            // 固定ロール3行プレビュー（🎲チェックを反映）
-            const _fixedPx = isSkDice() ? "CC({🎲})<=" : "CC<=";
-            const _fixedRollPreviewText = _fixedPx + "{SAN} 【正気度ロール】\n" + _fixedPx + "{INT} 【アイデア】\n" + _fixedPx + "{幸運} 【幸運】";
-            ["fixed-roll-preview", "fixed-roll-preview2", "fixed-roll-preview3"].forEach(id => {
-                const el = document.getElementById(id);
-                if (el) el.textContent = _fixedRollPreviewText;
-            });
-
             // 特性値プレビュー更新
             const statOn = document.getElementById("chk-stat-vars2-detail")?.checked ?? true;
             const statLines = [];
@@ -5901,7 +5907,8 @@
                 useV6: document.getElementById('chk-use-v6')?.checked || document.getElementById('chk-use-v6-2')?.checked || document.getElementById('chk-use-v6-3')?.checked || false,
                 noPalette: document.getElementById('koma-chk-no-palette')?.checked || false,
                 showStatus: document.getElementById('koma-chk-show-status')?.checked || false,
-                showParam: document.getElementById('koma-chk-show-param')?.checked || false
+                showParam: document.getElementById('koma-chk-show-param')?.checked || false,
+                fixedRollText: _fixedRollText
             };
         }
 
@@ -5935,11 +5942,30 @@
             if (showStatusEl) showStatusEl.checked = !!s.showStatus;
             const showParamEl = document.getElementById('koma-chk-show-param');
             if (showParamEl) showParamEl.checked = !!s.showParam;
+            applyFixedRollText(s.fixedRollText !== undefined ? s.fixedRollText : DEFAULT_FIXED_ROLL_TEXT);
         }
         let _hideChatChar = false;
         let _invisible = false;
         let _komaSettings = { hideStatus: false, hideChat: false, invisible: false, skDice: false, inclSep: false, sepSpace: 'before' };
-        let _fixedSanRolls = true; // 固定SAN/INT/幸運ロール（保存データに記録しない・常にデフォルトON）
+        let _fixedSanRolls = true; // 固定ロール欄の表示ON/OFF（保存データに記録しない・常にデフォルトON）
+        // ===== 固定ロール（自由編集） =====
+        const DEFAULT_FIXED_ROLL_TEXT = "CC<={SAN} 【正気度ロール】\nCC<={INT} 【アイデア】\nCC<={幸運} 【幸運】";
+        let _fixedRollText = DEFAULT_FIXED_ROLL_TEXT; // 保存カードに紐づいて保存/復元される自由編集テキスト
+        function syncFixedRollText(el) {
+            _fixedRollText = el.value;
+            ["fixed-roll-edit", "fixed-roll-edit2", "fixed-roll-edit3"].forEach(id => {
+                const t = document.getElementById(id);
+                if (t && t !== el) t.value = _fixedRollText;
+            });
+            updateExport();
+        }
+        function applyFixedRollText(text) {
+            _fixedRollText = (text !== undefined && text !== null) ? text : DEFAULT_FIXED_ROLL_TEXT;
+            ["fixed-roll-edit", "fixed-roll-edit2", "fixed-roll-edit3"].forEach(id => {
+                const t = document.getElementById(id);
+                if (t) t.value = _fixedRollText;
+            });
+        }
         let _stripEmoji = true;   // 名前から絵文字を除去
         let _stripMemoTrailingNewlines = true; // MEMO末尾空行を除去
         const STATS = [{ key: "str", label: "STR", jp: "筋力" }, { key: "con", label: "CON", jp: "体力" }, { key: "siz", label: "SIZ", jp: "体格" }, { key: "int", label: "INT", jp: "知性" }, { key: "pow", label: "POW", jp: "精神力" }, { key: "dex", label: "DEX", jp: "敏捷" }, { key: "app", label: "APP", jp: "外見" }, { key: "edu", label: "EDU", jp: "教育" }];
@@ -8037,8 +8063,15 @@
             // 保存データには記録せず、常にデフォルトONのグローバル変数として扱う。
             // パレットプレビューには表示せず、最終出力JSON(commands)の先頭にのみ反映する。
             if (_fixedSanRolls) {
-                const _fixedRollPx = isSkDice() ? "CC({🎲})<=" : "CC<=";
-                cmdLines = [_fixedRollPx + "{SAN} 【正気度ロール】", _fixedRollPx + "{INT} 【アイデア】", _fixedRollPx + "{幸運} 【幸運】", "", ...cmdLines];
+                // 編集エリアの記法は常に "CC<=" のプレーン表記で保存し、
+                // 🎲SK版ダイス表示チェックがONの時だけ出力時に "CC({🎲})<=" へ自動変換する
+                let _fixedRollLines = (_fixedRollText || '').split('\n');
+                if (isSkDice()) {
+                    _fixedRollLines = _fixedRollLines.map(l => l.replace(/CC<=/g, "CC({🎲})<="));
+                }
+                if (_fixedRollLines.some(l => l.trim() !== '')) {
+                    cmdLines = [..._fixedRollLines, "", ...cmdLines];
+                }
             }
 
             const _stripMemoOnExport = isStripMemoOn();
@@ -9824,6 +9857,7 @@
             } catch { }
 
             // 秘匿コマンド初期化
+            applyFixedRollText(_fixedRollText);
             updateSecretCmdPreview();
         });
         // loadMemoLocal はDOMContentLoaded後に移動済みか確認。
