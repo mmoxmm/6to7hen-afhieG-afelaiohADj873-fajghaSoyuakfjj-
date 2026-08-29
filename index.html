@@ -8753,6 +8753,9 @@
             const cardBg = hexToRgba50(sv.color);
             const isSelected = selectMode && _partialOwSelected.some(t => t.id === sv.id && t.isShared === isShared);
             const cardStyle = (cardBg ? 'background:' + cardBg + ';' : '') + (isSelected ? 'outline:2px solid var(--accent);outline-offset:-2px;' : '');
+            const selectOverlayHtml = selectMode
+                ? '<div style="position:absolute;top:3px;left:4px;width:18px;height:18px;border-radius:4px;border:2px solid ' + (isSelected ? 'var(--accent)' : 'var(--border2)') + ';background:' + (isSelected ? 'var(--accent)' : 'var(--bg)') + ';display:flex;align-items:center;justify-content:center;font-size:12px;color:#fff;font-weight:900;z-index:2;pointer-events:none">' + (isSelected ? '✓' : '') + '</div>'
+                : '';
             const ownerBadgeHtml = isShared
                 ? '<span style="font-size:11px;font-weight:700;color:#fff;background:var(--success);width:18px;height:18px;border-radius:4px;display:flex;align-items:center;justify-content:center;line-height:1;flex-shrink:0;box-shadow:0 1px 2px rgba(0,0,0,.15)">共</span>'
                 : '<span style="font-size:11px;font-weight:700;color:#fff;background:var(--accent);width:18px;height:18px;border-radius:4px;display:flex;align-items:center;justify-content:center;line-height:1;flex-shrink:0;box-shadow:0 1px 2px rgba(0,0,0,.15)">個</span>';
@@ -8868,9 +8871,7 @@
                         + '<span style="margin-left:auto;flex-shrink:0;display:flex;flex-direction:column;align-items:flex-end;line-height:1.15;font-size:8px;color:var(--text3)"><span>' + dateOnly + '</span><span>' + timeOnly + '</span></span>'
                         + '</div>')
                 + '</div>';
-        }            const selectOverlayHtml = selectMode
-                ? '<div style="position:absolute;top:3px;left:4px;width:18px;height:18px;border-radius:4px;border:2px solid ' + (isSelected ? 'var(--accent)' : 'var(--border2)') + ';background:' + (isSelected ? 'var(--accent)' : 'var(--bg)') + ';display:flex;align-items:center;justify-content:center;font-size:12px;color:#fff;font-weight:900;z-index:2;pointer-events:none">' + (isSelected ? '✓' : '') + '</div>'
-                : '';
+        }
 
         function toggleKomaRowVisibility(chk) {
             const id = chk.id.replace('cb-hide-koma-', '');
@@ -9523,47 +9524,6 @@ function showPartialOverwriteModal(targets) {
         }
         if (_partialOwSelectMode) exitPartialOwSelectMode();
         showToast(targets.length > 1 ? targets.length + '件を部分上書きしました' : '部分上書きしました');
-    });
-}
-    const list = isShared ? lSharedSaves() : currentSaves;
-    const sv = list.find(s => s.id === id);
-    if (!sv) return;
-    const fields = [
-        { key: 'memo', label: 'MEMO（上書き）', default: true },
-        { key: 'fixedRoll', label: '固定ロール（自動追加コマンド設定・上書き）', default: true },
-        { key: 'extraParam', label: '追加ステータス（新規追加のみ）', default: false },
-        { key: 'stats', label: '特性値／派生値（未入力欄のみ追加）', default: false },
-        { key: 'atk', label: '攻撃（新規追加のみ）', default: false },
-        { key: 'sk', label: '技能（新規追加のみ）', default: false },
-        { key: 'spell', label: '呪文（新規追加のみ）', default: false },
-        { key: 'consumable', label: '消耗品（新規追加のみ）', default: false },
-        { key: 'nameColor', label: 'NPC名・色（上書き）', default: false },
-    ];
-    const overlay = document.createElement("div");
-    overlay.style.cssText = "position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9000;display:flex;align-items:center;justify-content:center;padding:20px";
-    const rows = fields.map(f =>
-        '<label style="display:flex;align-items:center;gap:8px;padding:6px 8px;border:0.5px solid var(--border2);border-radius:var(--radius);margin-bottom:4px;background:var(--bg2);cursor:pointer">'
-        + '<input type="checkbox" class="pow-chk" data-field="' + f.key + '"' + (f.default ? ' checked' : '') + ' style="width:16px;height:16px;cursor:pointer;flex-shrink:0;accent-color:var(--accent)">'
-        + '<span style="font-size:13px;color:var(--text)">' + f.label + '</span>'
-        + '</label>'
-    ).join("");
-    overlay.innerHTML = '<div style="background:var(--bg);border-radius:var(--radius-lg);padding:16px;max-width:320px;width:100%;box-shadow:0 8px 32px rgba(0,0,0,.3);max-height:90vh;overflow-y:auto">'
-        + '<div style="font-size:15px;font-weight:700;margin-bottom:4px">🎯 部分上書き</div>'
-        + '<div style="font-size:12px;color:var(--text3);margin-bottom:10px;line-height:1.5">「<strong style="color:var(--text)">' + esc(sv.name) + '</strong>」に、チェックした項目のみ現在の編集内容を反映します。他の項目（数値など）は変更されません。</div>'
-        + rows
-        + '<div style="display:flex;gap:8px;margin-top:12px">'
-        + '<button id="pow-cancel" style="flex:1;background:none;border:0.5px solid var(--border2);border-radius:var(--radius);color:var(--text3);cursor:pointer;font-family:inherit;font-size:13px;padding:9px">キャンセル</button>'
-        + '<button id="pow-apply" style="flex:1;background:var(--accent);border:none;border-radius:var(--radius);color:#fff;cursor:pointer;font-family:inherit;font-size:13px;padding:9px;font-weight:700">上書き実行</button>'
-        + '</div></div>';
-    document.body.appendChild(overlay);
-    const close = () => document.body.removeChild(overlay);
-    overlay.querySelector("#pow-cancel").addEventListener("click", close);
-    overlay.addEventListener("click", e => { if (e.target === overlay) close(); });
-    overlay.querySelector("#pow-apply").addEventListener("click", async () => {
-        const checked = [...overlay.querySelectorAll(".pow-chk:checked")].map(c => c.dataset.field);
-        close();
-        if (!checked.length) { showToast("項目が選択されていません"); return; }
-        await applyPartialOverwrite(id, isShared, checked);
     });
 }
 
