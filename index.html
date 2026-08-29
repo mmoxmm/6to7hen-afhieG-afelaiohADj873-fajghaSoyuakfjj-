@@ -9418,15 +9418,15 @@
     const sv = list.find(s => s.id === id);
     if (!sv) return;
     const fields = [
-        { key: 'memo', label: 'MEMO', default: true },
-        { key: 'extraParam', label: '追加ステータス', default: true },
-        { key: 'fixedRoll', label: '固定ロール（自動追加コマンド設定）', default: false },
-        { key: 'stats', label: '特性値／派生値', default: false },
-        { key: 'atk', label: '攻撃', default: false },
-        { key: 'sk', label: '技能', default: false },
-        { key: 'spell', label: '呪文', default: false },
-        { key: 'consumable', label: '消耗品', default: false },
-        { key: 'nameColor', label: 'NPC名・色', default: false },
+        { key: 'memo', label: 'MEMO（上書き）', default: true },
+        { key: 'fixedRoll', label: '固定ロール（自動追加コマンド設定・上書き）', default: true },
+        { key: 'extraParam', label: '追加ステータス（新規追加のみ）', default: false },
+        { key: 'stats', label: '特性値／派生値（未入力欄のみ追加）', default: false },
+        { key: 'atk', label: '攻撃（新規追加のみ）', default: false },
+        { key: 'sk', label: '技能（新規追加のみ）', default: false },
+        { key: 'spell', label: '呪文（新規追加のみ）', default: false },
+        { key: 'consumable', label: '消耗品（新規追加のみ）', default: false },
+        { key: 'nameColor', label: 'NPC名・色（上書き）', default: false },
     ];
     const overlay = document.createElement("div");
     overlay.style.cssText = "position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9000;display:flex;align-items:center;justify-content:center;padding:20px";
@@ -9456,6 +9456,23 @@
     });
 }
 
+// リスト系フィールド（name/labelキーで重複判定して未重複のみ追加）
+function mergeAddByKey(existingArr, curArr, keyField) {
+    const base = JSON.parse(JSON.stringify(existingArr || []));
+    const existingKeys = new Set(base.filter(x => !x._sep && x[keyField]).map(x => x[keyField]));
+    let addedCount = 0;
+    (curArr || []).forEach(item => {
+        if (item._sep) return;
+        const k = item[keyField];
+        if (!k) return;
+        if (existingKeys.has(k)) return;
+        base.push({ ...item, id: nxtId++ });
+        existingKeys.add(k);
+        addedCount++;
+    });
+    return { list: base, addedCount };
+}
+
 async function applyPartialOverwrite(id, isShared, fields) {
     const list = isShared ? lSharedSaves() : currentSaves;
     const idx = list.findIndex(s => s.id === id);
@@ -9463,24 +9480,68 @@ async function applyPartialOverwrite(id, isShared, fields) {
     const existing = list[idx];
     const cur = getCurrentData({ includeKoma: !!existing.komaData });
     const merged = { ...existing };
+    let addedTotal = 0;
 
     if (fields.includes('memo')) merged.memoList = JSON.parse(JSON.stringify(cur.memoList));
-    if (fields.includes('extraParam')) merged.extraParams = JSON.parse(JSON.stringify(cur.extraParams));
+
+    if (fields.includes('extraParam')) {
+        const r = mergeAddByKey(existing.extraParams, cur.extraParams, 'label');
+        merged.extraParams = r.list; addedTotal += r.addedCount;
+    }
+
     if (fields.includes('fixedRoll')) {
         merged.settings = { ...(existing.settings || {}), fixedRollText: cur.settings.fixedRollText };
     }
+
     if (fields.includes('stats')) {
-        merged.vals = { ...cur.vals };
-        merged.ov = { ...cur.ov };
-        merged.ovManual = { ...cur.ovManual };
-        merged.customFields = JSON.parse(JSON.stringify(cur.customFields));
-        merged.dmgLabel = cur.dmgLabel;
-        merged.build = cur.build;
+        // 特性値：既存が未入力（0）の項目のみ現在値で埋める
+        const exVals = { ...(existing.vals || {}) };
+        STATS.forEach(({ key }) => {
+            if (!exVals[key] && cur.vals[key]) { exVals[key] = cur.vals[key]; addedTotal++; }
+        });
+        merged.vals = exVals;
+        // 派生値（HP/MP/SAN/幸運）：既存が未設定の項目のみ埋める
+        const exOv = { ...(existing.ov || {}) };
+        const exOvManual = { ...(existing.ovManual || {}) };
+        ['hp', 'mp', 'san', 'luck'].forEach(k => {
+            const existsAlready = exOvManual[k] || (exOv[k] || 0) > 0;
+            if (!existsAlready && (cur.ov[k] || 0) > 0) {
+                exOv[k] = cur.ov[k];
+                exOvManual[k] = cur.ovManual[k];
+                addedTotal++;
+            }
+        });
+        merged.ov = exOv;
+        merged.ovManual = exOvManual;
+        // 追加ステータス（customFields）：ラベル未重複のみ追加
+        const exCf = JSON.parse(JSON.stringify(existing.customFields || []));
+        const exCfLabels = new Set(exCf.filter(cf => cf.label).map(cf => cf.label));
+        (cur.customFields || []).forEach(cf => {
+            if (!cf.label || exCfLabels.has(cf.label)) return;
+            exCf.push({ ...cf, id: 'cf_' + (nxtId++) });
+            exCfLabels.add(cf.label);
+            addedTotal++;
+        });
+        merged.customFields = exCf;
     }
-    if (fields.includes('atk')) { merged.atkList = JSON.parse(JSON.stringify(cur.atkList)); merged.atkHeader = cur.atkHeader; }
-    if (fields.includes('sk')) { merged.skList = JSON.parse(JSON.stringify(cur.skList)); merged.skHeader = cur.skHeader; }
-    if (fields.includes('spell')) { merged.splList = JSON.parse(JSON.stringify(cur.splList)); merged.splHeader = cur.splHeader; }
-    if (fields.includes('consumable')) merged.consumables = JSON.parse(JSON.stringify(cur.consumables));
+
+    if (fields.includes('atk')) {
+        const r = mergeAddByKey(existing.atkList, cur.atkList, 'name');
+        merged.atkList = r.list; addedTotal += r.addedCount;
+    }
+    if (fields.includes('sk')) {
+        const r = mergeAddByKey(existing.skList, cur.skList, 'name');
+        merged.skList = r.list; addedTotal += r.addedCount;
+    }
+    if (fields.includes('spell')) {
+        const r = mergeAddByKey(existing.splList, cur.splList, 'name');
+        merged.splList = r.list; addedTotal += r.addedCount;
+    }
+    if (fields.includes('consumable')) {
+        const r = mergeAddByKey(existing.consumables, cur.consumables, 'label');
+        merged.consumables = r.list; addedTotal += r.addedCount;
+    }
+
     if (fields.includes('nameColor')) { merged.name = cur.name; merged.color = cur.color; }
 
     merged.id = existing.id;
