@@ -1694,7 +1694,7 @@
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
             gap: 6px;
-            align-items: start
+            align-items: stretch
         }
 
         .save-card-grid {
@@ -1705,7 +1705,10 @@
             position: relative;
             box-shadow: var(--shadow);
             transition: border-color .15s, box-shadow .15s;
-            min-width: 0
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            height: 100%
         }
 
         .save-card-grid.reorder-select {
@@ -8838,7 +8841,7 @@
                 + '<span class="btn-tag-add" style="display:inline-flex;align-items:center;height:15px;padding:0 4px;border-radius:3px;background:var(--bg);border:0.5px dashed var(--border2);color:var(--text3);font-size:10px;cursor:pointer;" data-id="' + sv.id + '" data-shared="' + (isShared ? 1 : 0) + '">＋</span>';
 
             const toggleBtnLabel = viewMode === 'koma' ? 'ステータス' : 'コマ';
-            const toggleBtn = kind === 'both' ? '<button class="scg-toggle" data-id="' + sv.id + '" style="font-size:10px;padding:2px 5px;border-radius:4px;cursor:pointer;background:none;border:0.5px solid var(--accent);color:var(--accent);flex-shrink:0;white-space:nowrap" title="ステータス/コマ表示切替">' + toggleBtnLabel + '</button>' : '';
+            const toggleBtn = kind === 'both' ? '<button class="scg-toggle" data-id="' + sv.id + '" style="font-size:10px;height:18px;padding:0 5px;border-radius:4px;cursor:pointer;background:none;border:0.5px solid var(--accent);color:var(--accent);flex-shrink:0;white-space:nowrap;display:inline-flex;align-items:center;justify-content:center;line-height:1" title="ステータス/コマ表示切替">' + toggleBtnLabel + '</button>' : '';
             const komaName = (kind === 'both' && viewMode === 'koma' && sv.komaData) ? (sv.komaData.name || '') : '';
             const showName = (komaName && komaName !== '（名称なし）' && komaName !== sv.name) ? komaName : sv.name;
 
@@ -8854,10 +8857,12 @@
                 + collapseHtml
                 + ownerBadgeHtml
                 + '</div>'
+                + '<div style="flex:1 1 auto;min-height:0">'
                 + '<div style="margin-bottom:3px;padding-right:' + (kind === 'koma' ? '22px' : '44px') + '">'
                 + '<span class="scg-name" data-id="' + sv.id + '" data-shared="' + (isShared ? 1 : 0) + '" style="cursor:pointer;font-weight:700;font-size:13px;color:var(--text);text-decoration:underline;text-decoration-color:var(--border2);white-space:normal;word-break:break-word;line-height:1.3;display:block">' + typeEmoji + ' ' + esc(showName) + '</span>'
                 + '</div>'
                 + '<div style="margin-bottom:3px;min-height:16px">' + (bodyHtml || '<div style="color:var(--text3);font-size:10px">―</div>') + '</div>'
+                + '</div>'
                 + (tags.length || dndIndex === null ? divider + '<div style="display:flex;flex-wrap:wrap;margin-bottom:2px">' + tagsHtml + '</div>' : '')
                 + divider
                 + (selectMode
