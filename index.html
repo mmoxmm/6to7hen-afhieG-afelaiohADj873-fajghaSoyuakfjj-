@@ -3032,6 +3032,8 @@
                                 style="font-size:13px;padding:5px 10px;background:var(--success)">👥 共有に保存</button>
                             <button class="btn-sec" onclick="downloadFromCloud();if(sharedToken)downloadFromShared();"
                                 style="font-size:13px;padding:5px 10px">⬇️ 取得</button>
+                            <button class="btn-sec" id="btn-partial-select" onclick="togglePartialOwSelectMode()"
+                                style="font-size:13px;padding:5px 10px">🎯一部上書き</button>
                             <button class="btn-sec" id="btn-reorder-stat" onclick="toggleStatReorder()"
                                 style="font-size:13px;padding:5px 10px;display:none">🔀 並び替え</button>
                         </div>
@@ -4276,6 +4278,8 @@
         let _reorderShared = false;
         let _reorderKoma = false;
         let _reorderStat = false;
+                let _partialOwSelectMode = false;
+        let _partialOwSelected = [];
         function _applySavedOrder(arr, order) {
             if (!order || !order.length) return arr;
             const sorted = arr.slice().sort((a, b) => {
@@ -4344,6 +4348,34 @@
             }
             renderStatSaveList();
         }
+
+        function togglePartialOwSelectMode() {
+            if (_reorderStat) { showToast('並び替えモード中は使用できません'); return; }
+            _partialOwSelectMode = !_partialOwSelectMode;
+            if (!_partialOwSelectMode) _partialOwSelected = [];
+            const btn = document.getElementById('btn-partial-select');
+            if (btn) { btn.textContent = _partialOwSelectMode ? '✅ 選択完了' : '🎯一部上書き'; btn.classList.toggle('active-reorder', _partialOwSelectMode); }
+            if (_partialOwSelectMode) showToast('カードをタップして選択してください');
+            renderStatSaveList();
+        }
+        function exitPartialOwSelectMode() {
+            _partialOwSelectMode = false;
+            _partialOwSelected = [];
+            const btn = document.getElementById('btn-partial-select');
+            if (btn) { btn.textContent = '🎯一部上書き'; btn.classList.remove('active-reorder'); }
+            renderStatSaveList();
+        }
+        function togglePartialOwCardSelect(id, isShared) {
+            const idx = _partialOwSelected.findIndex(t => t.id === id && t.isShared === isShared);
+            if (idx >= 0) _partialOwSelected.splice(idx, 1);
+            else _partialOwSelected.push({ id, isShared });
+            renderStatSaveList();
+        }
+        function confirmPartialOwSelection() {
+            if (!_partialOwSelected.length) { showToast('カードを選択してください'); return; }
+            showPartialOverwriteModal([..._partialOwSelected]);
+        }
+
         // ===== 6版/7版行の一括保存・上書きボタン =====
         function getActiveMainTab() {
             return document.querySelector('.tab[data-tab].active')?.dataset.tab || 'stats';
@@ -8670,6 +8702,18 @@
                 renderTagFilterBar('tag-filter-bar-stat-top', getStatTags(), _statTagFilter, setStatTagFilter);
                 return;
             }
+                        if (_partialOwSelectMode) {
+                const selBar = '<div style="display:flex;align-items:center;justify-content:space-between;gap:6px;margin-bottom:6px;padding:6px 8px;background:rgba(40,85,160,0.08);border:0.5px solid var(--accent);border-radius:var(--radius)">'
+                    + '<span style="font-size:12px;font-weight:700;color:var(--accent)">🎯 ' + _partialOwSelected.length + '件選択中（カードをタップで選択/解除）</span>'
+                    + '<div style="display:flex;gap:4px;flex-shrink:0">'
+                    + '<button onclick="exitPartialOwSelectMode()" style="font-size:12px;padding:4px 8px;border-radius:var(--radius);border:0.5px solid var(--border2);background:none;color:var(--text3);cursor:pointer">キャンセル</button>'
+                    + '<button onclick="confirmPartialOwSelection()" style="font-size:12px;padding:4px 8px;border-radius:var(--radius);border:none;background:var(--accent);color:#fff;font-weight:700;cursor:pointer">適用（' + _partialOwSelected.length + '）</button>'
+                    + '</div></div>';
+                wrap.innerHTML = selBar + '<div class="save-list">' + allSaves.map(sv => renderSaveCard(sv, !!sv._fromShared, 'stats', null, true)).join("") + '</div>';
+                bindSaveListEvents(wrap);
+                renderTagFilterBar('tag-filter-bar-stat-top', getStatTags(), _statTagFilter, setStatTagFilter);
+                return;
+            }
             if (_reorderStat) {
                 wrap.innerHTML = '<div style="font-size:12px;font-weight:700;color:var(--accent);margin-bottom:6px">🔀 並び替え中（☰ドラッグ or 2枚タップで入替）</div>'
                     + '<div class="save-list">' + allSaves.map((sv, idx) => renderSaveCard(sv, !!sv._fromShared, 'stats', idx)).join('') + '</div>';
@@ -8700,14 +8744,15 @@
             return { char: "👤", koma: "🎭", both: "📚" }[getSaveKind(sv)] || "👤";
         }
 
-        function renderSaveCard(sv, isShared, callerTab = 'save', dndIndex = null) {
+        function renderSaveCard(sv, isShared, callerTab = 'save', dndIndex = null, selectMode = false) {
             const d = new Date(sv.savedAt);
             const dateOnly = (d.getMonth() + 1).toString().padStart(2, '0') + '/' + d.getDate().toString().padStart(2, '0');
             const timeOnly = d.getHours().toString().padStart(2, '0') + ':' + d.getMinutes().toString().padStart(2, '0');
             const kind = getSaveKind(sv);
             const typeEmoji = kind === 'both' ? '📚' : kind === 'koma' ? '🎭' : '📋';
             const cardBg = hexToRgba50(sv.color);
-            const cardStyle = cardBg ? 'background:' + cardBg + ';' : '';
+            const isSelected = selectMode && _partialOwSelected.some(t => t.id === sv.id && t.isShared === isShared);
+            const cardStyle = (cardBg ? 'background:' + cardBg + ';' : '') + (isSelected ? 'outline:2px solid var(--accent);outline-offset:-2px;' : '');
             const ownerBadgeHtml = isShared
                 ? '<span style="font-size:11px;font-weight:700;color:#fff;background:var(--success);width:18px;height:18px;border-radius:4px;display:flex;align-items:center;justify-content:center;line-height:1;flex-shrink:0;box-shadow:0 1px 2px rgba(0,0,0,.15)">共</span>'
                 : '<span style="font-size:11px;font-weight:700;color:#fff;background:var(--accent);width:18px;height:18px;border-radius:4px;display:flex;align-items:center;justify-content:center;line-height:1;flex-shrink:0;box-shadow:0 1px 2px rgba(0,0,0,.15)">個</span>';
@@ -8800,6 +8845,7 @@
             const collapseHtml = kind === 'koma' ? '' : '<button class="scg-collapse" data-id="' + sv.id + '" data-shared="' + (isShared ? 1 : 0) + '" title="読込時にブロックを閉じる" style="font-size:10px;width:18px;height:18px;padding:0;border-radius:4px;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;line-height:1;background:' + (collapseOn ? 'var(--accent)' : 'none') + ';border:0.5px solid ' + (collapseOn ? 'var(--accent)' : 'var(--border2)') + ';color:' + (collapseOn ? '#fff' : 'var(--text2)') + '">閉</button>';
 
             return '<div class="save-card-grid' + reorderCls + '" data-svid="' + sv.id + '"' + dndAttr + ' style="' + cardStyle + '">'
+                + selectOverlayHtml
                 + '<div style="position:absolute;top:3px;right:4px;display:flex;align-items:center;gap:3px">'
                 + collapseHtml
                 + ownerBadgeHtml
@@ -8810,15 +8856,21 @@
                 + '<div style="margin-bottom:3px;min-height:16px">' + (bodyHtml || '<div style="color:var(--text3);font-size:10px">―</div>') + '</div>'
                 + (tags.length || dndIndex === null ? divider + '<div style="display:flex;flex-wrap:wrap;margin-bottom:2px">' + tagsHtml + '</div>' : '')
                 + divider
-                + '<div class="scg-footer" style="display:flex;align-items:center;gap:3px;flex-wrap:nowrap">'
-                + '<button class="btn-update" style="font-size:10px;height:18px;padding:0 5px;border-radius:4px;cursor:pointer;background:none;border:0.5px solid #c07010;color:#c07010;flex-shrink:0;display:inline-flex;align-items:center;justify-content:center;line-height:1" data-id="' + sv.id + '" data-shared="' + (isShared ? 1 : 0) + '" data-caller="' + callerTab + '">上書</button>'
-                + (kind !== 'koma' ? '<button class="btn-partial-ow" style="font-size:10px;height:18px;padding:0 5px;border-radius:4px;cursor:pointer;background:none;border:0.5px solid var(--accent);color:var(--accent);flex-shrink:0;display:inline-flex;align-items:center;justify-content:center;line-height:1" data-id="' + sv.id + '" data-shared="' + (isShared ? 1 : 0) + '" title="MEMO・追加ステータス等を選んで上書き">🎯</button>' : '')
-                + '<button class="btn-dng btn-delete" style="font-size:10px;height:18px;padding:0 5px;border-radius:4px;cursor:pointer;background:none;border:0.5px solid var(--danger);color:var(--danger);flex-shrink:0;display:inline-flex;align-items:center;justify-content:center;line-height:1" data-id="' + sv.id + '" data-shared="' + (isShared ? 1 : 0) + '">削除</button>'
-                + toggleBtn
-                + '<span style="margin-left:auto;flex-shrink:0;display:flex;flex-direction:column;align-items:flex-end;line-height:1.15;font-size:8px;color:var(--text3)"><span>' + dateOnly + '</span><span>' + timeOnly + '</span></span>'
-                + '</div>'
+                + (selectMode
+                    ? '<div class="scg-footer" style="display:flex;align-items:center;justify-content:flex-end;gap:3px">'
+                        + '<span style="flex-shrink:0;display:flex;flex-direction:column;align-items:flex-end;line-height:1.15;font-size:8px;color:var(--text3)"><span>' + dateOnly + '</span><span>' + timeOnly + '</span></span>'
+                        + '</div>'
+                    : '<div class="scg-footer" style="display:flex;align-items:center;gap:3px;flex-wrap:nowrap">'
+                        + '<button class="btn-update" style="font-size:10px;height:18px;padding:0 5px;border-radius:4px;cursor:pointer;background:none;border:0.5px solid #c07010;color:#c07010;flex-shrink:0;display:inline-flex;align-items:center;justify-content:center;line-height:1" data-id="' + sv.id + '" data-shared="' + (isShared ? 1 : 0) + '" data-caller="' + callerTab + '">上書</button>'
+                        + (kind !== 'koma' ? '<button class="btn-partial-ow" style="font-size:10px;height:18px;padding:0 5px;border-radius:4px;cursor:pointer;background:none;border:0.5px solid var(--accent);color:var(--accent);flex-shrink:0;display:inline-flex;align-items:center;justify-content:center;line-height:1" data-id="' + sv.id + '" data-shared="' + (isShared ? 1 : 0) + '" title="MEMO・追加ステータス等を選んで上書き">🎯</button>' : '')
+                        + '<button class="btn-dng btn-delete" style="font-size:10px;height:18px;padding:0 5px;border-radius:4px;cursor:pointer;background:none;border:0.5px solid var(--danger);color:var(--danger);flex-shrink:0;display:inline-flex;align-items:center;justify-content:center;line-height:1" data-id="' + sv.id + '" data-shared="' + (isShared ? 1 : 0) + '">削除</button>'
+                        + toggleBtn
+                        + '<span style="margin-left:auto;flex-shrink:0;display:flex;flex-direction:column;align-items:flex-end;line-height:1.15;font-size:8px;color:var(--text3)"><span>' + dateOnly + '</span><span>' + timeOnly + '</span></span>'
+                        + '</div>')
                 + '</div>';
-        }
+        }            const selectOverlayHtml = selectMode
+                ? '<div style="position:absolute;top:3px;left:4px;width:18px;height:18px;border-radius:4px;border:2px solid ' + (isSelected ? 'var(--accent)' : 'var(--border2)') + ';background:' + (isSelected ? 'var(--accent)' : 'var(--bg)') + ';display:flex;align-items:center;justify-content:center;font-size:12px;color:#fff;font-weight:900;z-index:2;pointer-events:none">' + (isSelected ? '✓' : '') + '</div>'
+                : '';
 
         function toggleKomaRowVisibility(chk) {
             const id = chk.id.replace('cb-hide-koma-', '');
@@ -9137,6 +9189,12 @@
             // 読込ボタン（展開CBを参照）
             wrap.querySelectorAll(".save-card-grid").forEach(card => {
                 card.addEventListener("click", e => {
+                    if (_partialOwSelectMode) {
+                        const nameElSel = card.querySelector(".scg-name");
+                        if (!nameElSel) return;
+                        togglePartialOwCardSelect(+nameElSel.dataset.id, nameElSel.dataset.shared === "1");
+                        return;
+                    }
                     // ボタン・タグ・トグル等のクリックはそちらの機能を優先し、カード読込は発火させない
                     if (e.target.closest(".btn-update,.btn-delete,.scg-toggle,.tag-chip-filter,.btn-tag-add,.scg-collapse,input,button")) return;
                     const nameEl = card.querySelector(".scg-name");
@@ -9313,10 +9371,11 @@
                 });
             });
                         wrap.querySelectorAll(".btn-partial-ow").forEach(btn => {
-                btn.addEventListener("click", () => {
+                btn.addEventListener("click", e => {
+                    e.stopPropagation();
                     const isShared = btn.dataset.shared === "1";
                     const id = +btn.dataset.id;
-                    showPartialOverwriteModal(id, isShared);
+                    showPartialOverwriteModal([{ id, isShared }]);
                 });
             });
             wrap.querySelectorAll(".btn-delete").forEach(btn => {
@@ -9413,7 +9472,59 @@
             bindSaveListEvents(wrap);
         }
 
-        function showPartialOverwriteModal(id, isShared) {
+function showPartialOverwriteModal(targets) {
+    if (!targets || !targets.length) return;
+    const names = targets.map(t => {
+        const list = t.isShared ? lSharedSaves() : currentSaves;
+        const sv = list.find(s => s.id === t.id);
+        return sv ? sv.name : '';
+    }).filter(Boolean);
+    if (!names.length) return;
+    const targetLabel = targets.length === 1
+        ? '「<strong style="color:var(--text)">' + esc(names[0]) + '</strong>」'
+        : '<strong style="color:var(--text)">' + targets.length + '件のカード</strong>';
+    const fields = [
+        { key: 'memo', label: 'MEMO（上書き）', default: true },
+        { key: 'fixedRoll', label: '固定ロール（自動追加コマンド設定・上書き）', default: true },
+        { key: 'extraParam', label: '追加ステータス（新規追加のみ）', default: false },
+        { key: 'stats', label: '特性値／派生値（未入力欄のみ追加）', default: false },
+        { key: 'atk', label: '攻撃（新規追加のみ）', default: false },
+        { key: 'sk', label: '技能（新規追加のみ）', default: false },
+        { key: 'spell', label: '呪文（新規追加のみ）', default: false },
+        { key: 'consumable', label: '消耗品（新規追加のみ）', default: false },
+        { key: 'nameColor', label: 'NPC名・色（上書き）', default: false },
+    ];
+    const overlay = document.createElement("div");
+    overlay.style.cssText = "position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9000;display:flex;align-items:center;justify-content:center;padding:20px";
+    const rows = fields.map(f =>
+        '<label style="display:flex;align-items:center;gap:8px;padding:6px 8px;border:0.5px solid var(--border2);border-radius:var(--radius);margin-bottom:4px;background:var(--bg2);cursor:pointer">'
+        + '<input type="checkbox" class="pow-chk" data-field="' + f.key + '"' + (f.default ? ' checked' : '') + ' style="width:16px;height:16px;cursor:pointer;flex-shrink:0;accent-color:var(--accent)">'
+        + '<span style="font-size:13px;color:var(--text)">' + f.label + '</span>'
+        + '</label>'
+    ).join("");
+    overlay.innerHTML = '<div style="background:var(--bg);border-radius:var(--radius-lg);padding:16px;max-width:320px;width:100%;box-shadow:0 8px 32px rgba(0,0,0,.3);max-height:90vh;overflow-y:auto">'
+        + '<div style="font-size:15px;font-weight:700;margin-bottom:4px;text-align:center">🎯 部分上書き</div>'
+        + '<div style="font-size:12px;color:var(--text3);margin-bottom:10px;line-height:1.5;text-align:center">' + targetLabel + 'に、チェックした項目のみ現在の編集内容を反映します。他の項目（数値など）は変更されません。</div>'
+        + rows
+        + '<div style="display:flex;gap:8px;margin-top:12px">'
+        + '<button id="pow-cancel" style="flex:1;background:none;border:0.5px solid var(--border2);border-radius:var(--radius);color:var(--text3);cursor:pointer;font-family:inherit;font-size:13px;padding:9px">キャンセル</button>'
+        + '<button id="pow-apply" style="flex:1;background:var(--accent);border:none;border-radius:var(--radius);color:#fff;cursor:pointer;font-family:inherit;font-size:13px;padding:9px;font-weight:700">上書き実行</button>'
+        + '</div></div>';
+    document.body.appendChild(overlay);
+    const close = () => document.body.removeChild(overlay);
+    overlay.querySelector("#pow-cancel").addEventListener("click", close);
+    overlay.addEventListener("click", e => { if (e.target === overlay) close(); });
+    overlay.querySelector("#pow-apply").addEventListener("click", async () => {
+        const checked = [...overlay.querySelectorAll(".pow-chk:checked")].map(c => c.dataset.field);
+        close();
+        if (!checked.length) { showToast("項目が選択されていません"); return; }
+        for (const t of targets) {
+            await applyPartialOverwrite(t.id, t.isShared, checked);
+        }
+        if (_partialOwSelectMode) exitPartialOwSelectMode();
+        showToast(targets.length > 1 ? targets.length + '件を部分上書きしました' : '部分上書きしました');
+    });
+}
     const list = isShared ? lSharedSaves() : currentSaves;
     const sv = list.find(s => s.id === id);
     if (!sv) return;
