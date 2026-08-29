@@ -9485,24 +9485,34 @@ function showPartialOverwriteModal(targets) {
     const targetLabel = targets.length === 1
         ? '「<strong style="color:var(--text)">' + esc(names[0]) + '</strong>」'
         : '<strong style="color:var(--text)">' + targets.length + '件のカード</strong>';
-    const fields = [
+    // 常時表示する項目（この順）
+    const alwaysFields = [
         { key: 'fixedRoll', label: '固定ロール（自動追加コマンド設定・上書き）', default: false },
         { key: 'extraParam', label: '追加ステータス（新規追加のみ）', default: false },
+        { key: 'nameColor', label: '名前・カラーコード（上書き）', default: false },
+    ];
+    // 「ステータス数値」として折りたたむ項目
+    const foldFields = [
         { key: 'stats', label: '特性値／派生値（未入力欄のみ追加）', default: false },
         { key: 'atk', label: '攻撃（新規追加のみ）', default: false },
         { key: 'sk', label: '技能（新規追加のみ）', default: false },
         { key: 'spell', label: '呪文（新規追加のみ）', default: false },
         { key: 'consumable', label: '消耗品（新規追加のみ）', default: false },
-        { key: 'nameColor', label: 'NPC名・色（上書き）', default: false },
     ];
     const overlay = document.createElement("div");
     overlay.style.cssText = "position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9000;display:flex;align-items:center;justify-content:center;padding:20px";
-    const rows = fields.map(f =>
+    const renderFieldRow = f =>
         '<label style="display:flex;align-items:center;gap:8px;padding:6px 8px;border:0.5px solid var(--border2);border-radius:var(--radius);margin-bottom:4px;background:var(--bg2);cursor:pointer">'
         + '<input type="checkbox" class="pow-chk" data-field="' + f.key + '"' + (f.default ? ' checked' : '') + ' style="width:16px;height:16px;cursor:pointer;flex-shrink:0;accent-color:var(--accent)">'
         + '<span style="font-size:13px;color:var(--text)">' + f.label + '</span>'
-        + '</label>'
-    ).join("");
+        + '</label>';
+    const alwaysRows = alwaysFields.map(renderFieldRow).join("");
+    const foldRows = foldFields.map(renderFieldRow).join("");
+    const foldSection = '<div id="pow-fold-hd" style="display:flex;align-items:center;justify-content:space-between;padding:6px 8px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg2);cursor:pointer;margin-bottom:4px;margin-top:6px">'
+        + '<span style="font-size:12px;font-weight:700;color:var(--text2)">ステータス数値</span>'
+        + '<span id="pow-fold-arrow" style="font-size:11px;color:var(--text3);transition:transform .2s">▼</span>'
+        + '</div>'
+        + '<div id="pow-fold-body" style="display:none">' + foldRows + '</div>';
     const curMemosForModal = (memoList || []).filter(m => m.label || m.content);
     const memoRows = curMemosForModal.map((m, i) => {
         const title = (m.label || '').split('\n')[0] || '(無題メモ)';
@@ -9513,18 +9523,27 @@ function showPartialOverwriteModal(targets) {
             + '</label>';
     }).join("");
     const memoSection = curMemosForModal.length
-        ? '<div style="font-size:11px;font-weight:700;color:var(--text3);margin:8px 0 3px;letter-spacing:.04em">📝 MEMO（同じタイトルは上書き／なければ新規追加）</div>' + memoRows
+        ? '<div style="font-size:11px;font-weight:700;color:var(--text3);margin:8px 0 3px;letter-spacing:.04em;text-align:center;line-height:1.6">📝 MEMO<br>（同じタイトルは上書き／なければ新規追加）</div>' + memoRows
         : '';
     overlay.innerHTML = '<div style="background:var(--bg);border-radius:var(--radius-lg);padding:16px;max-width:320px;width:100%;box-shadow:0 8px 32px rgba(0,0,0,.3);max-height:90vh;overflow-y:auto">'
         + '<div style="font-size:15px;font-weight:700;margin-bottom:4px;text-align:center">🎯 部分上書き</div>'
-        + '<div style="font-size:12px;color:var(--text3);margin-bottom:10px;line-height:1.5;text-align:center">' + targetLabel + 'に、チェックした項目のみ現在の編集内容を反映します。他の項目（数値など）は変更されません。</div>'
-        + rows
+        + '<div style="font-size:12px;color:var(--text3);margin-bottom:10px;line-height:1.5;text-align:center">' + targetLabel + 'へ<br>チェック項目のみ、<br>現在表示中のカード内容を反映します。</div>'
+        + alwaysRows
+        + foldSection
         + memoSection
         + '<div style="display:flex;gap:8px;margin-top:12px">'
         + '<button id="pow-cancel" style="flex:1;background:none;border:0.5px solid var(--border2);border-radius:var(--radius);color:var(--text3);cursor:pointer;font-family:inherit;font-size:13px;padding:9px">キャンセル</button>'
         + '<button id="pow-apply" style="flex:1;background:var(--accent);border:none;border-radius:var(--radius);color:#fff;cursor:pointer;font-family:inherit;font-size:13px;padding:9px;font-weight:700">上書き実行</button>'
         + '</div></div>';
     document.body.appendChild(overlay);
+    overlay.querySelector("#pow-fold-hd")?.addEventListener("click", () => {
+        const body = overlay.querySelector("#pow-fold-body");
+        const arrow = overlay.querySelector("#pow-fold-arrow");
+        if (!body) return;
+        const open = body.style.display !== "none";
+        body.style.display = open ? "none" : "block";
+        if (arrow) arrow.style.transform = open ? "" : "rotate(180deg)";
+    });
     const close = () => document.body.removeChild(overlay);
     overlay.querySelector("#pow-cancel").addEventListener("click", close);
     overlay.addEventListener("click", e => { if (e.target === overlay) close(); });
