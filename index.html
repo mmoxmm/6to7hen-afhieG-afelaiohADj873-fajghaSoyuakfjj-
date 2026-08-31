@@ -2408,8 +2408,8 @@
             border: 1px solid rgba(40, 85, 160, 0.35);
             border-radius: var(--radius);
             padding: 4px 5px;
-            resize: none;
-            overflow: hidden;
+            resize: vertical;
+            overflow: auto;
             white-space: pre;
         }
 
@@ -3411,14 +3411,14 @@
                                 <label
                                     style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;color:var(--text2)">
                                     <input type="radio" name="koma-sep-space" id="koma-sep-before" value="before"
-                                        checked onchange="syncSepSpaceSetting(this)"
+                                        checked onchange="updateKomaJsonPreview()"
                                         style="cursor:pointer;accent-color:var(--accent)">
                                     앞에 빈 줄 삽입
                                 </label>
                                 <label
                                     style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;color:var(--text2)">
                                     <input type="radio" name="koma-sep-space" id="koma-sep-both" value="both"
-                                        onchange="syncSepSpaceSetting(this)"
+                                        onchange="updateKomaJsonPreview()"
                                         style="cursor:pointer;accent-color:var(--accent)">
                                     앞뒤에 빈 줄 삽입
                                 </label>
@@ -7928,14 +7928,6 @@
         }
 
         function setExportMode(mode) { exportMode = mode;["json", "text"].forEach(m => { const b = document.getElementById("exp-btn-" + m); if (b) b.className = "export-btn" + (m === mode ? "" : " sec"); const b2 = document.getElementById("exp-btn-" + m + "2"); if (b2) b2.className = "export-btn" + (m === mode ? "" : " sec"); }); const dl = document.getElementById("btn-dl-json"); if (dl) dl.style.display = mode === "json" ? "inline-flex" : "none"; const dl2 = document.getElementById("btn-dl-json2"); if (dl2) dl2.style.display = mode === "json" ? "inline-flex" : "none"; updateExport(); }
-
-        function syncSepSpaceSetting(el) {
-            const val = el.value;
-            document.querySelectorAll('input[name="koma-sep-space"], input[name="koma-sep-space2"], input[name="koma-sep-space3"], input[name="koma-sep-space4"]').forEach(r => {
-                r.checked = r.value === val;
-            });
-            updateKomaJsonPreview();
-        }
 
         function syncKomaSetting(el) {
             // グローバル変数に値を保存（これが唯一の真の値）
