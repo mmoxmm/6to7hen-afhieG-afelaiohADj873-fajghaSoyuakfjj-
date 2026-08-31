@@ -3007,9 +3007,11 @@
                                         <input type="checkbox" id="chk-secret-cmd-stat" checked
                                             onchange="syncSecretCmdCheck(this)"
                                             style="cursor:pointer;accent-color:var(--accent);width:14px;height:14px">
-                                        🔒 秘匿タブ向けコマンド
+                                        🔒 秘匿タブ向けコマンド（自由編集）
                                     </label>
-                                    <div class="secret-cmd-preview" id="secret-cmd-preview3">（チェックをONにすると表示）</div>
+                                    <textarea class="fixed-roll-edit" id="secret-cmd-edit3" rows="6"
+                                        oninput="syncSecretCmdText(this)"
+                                        placeholder="⚠️systemに駒名変更！&#10;[ {名前} ] HP : n → n"></textarea>
                                 </div>
                             </div>
                         </div>
@@ -3949,10 +3951,11 @@
                                                     <input type="checkbox" id="chk-secret-cmd" checked
                                                         onchange="syncSecretCmdCheck(this)"
                                                         style="cursor:pointer;accent-color:var(--accent);width:14px;height:14px">
-                                                    🔒 秘匿タブ向けコマンド
+                                                    🔒 秘匿タブ向けコマンド（自由編集）
                                                 </label>
-                                                <div class="secret-cmd-preview" id="secret-cmd-preview">（チェックをONにすると表示）
-                                                </div>
+                                                <textarea class="fixed-roll-edit" id="secret-cmd-edit" rows="6"
+                                                    oninput="syncSecretCmdText(this)"
+                                                    placeholder="⚠️systemに駒名変更！&#10;[ {名前} ] HP : n → n"></textarea>
                                             </div>
                                         </div>
                                     </div>
@@ -4222,10 +4225,11 @@
                                                     <input type="checkbox" id="chk-secret-cmd2" checked
                                                         onchange="syncSecretCmdCheck(this)"
                                                         style="cursor:pointer;accent-color:var(--accent);width:14px;height:14px">
-                                                    🔒 秘匿タブ向けコマンド
+                                                    🔒 秘匿タブ向けコマンド（自由編集）
                                                 </label>
-                                                <div class="secret-cmd-preview" id="secret-cmd-preview2">（チェックをONにすると表示）
-                                                </div>
+                                                <textarea class="fixed-roll-edit" id="secret-cmd-edit2" rows="6"
+                                                    oninput="syncSecretCmdText(this)"
+                                                    placeholder="⚠️systemに駒名変更！&#10;[ {名前} ] HP : n → n"></textarea>
                                             </div>
                                         </div>
                                     </div>
@@ -5891,29 +5895,30 @@
             showToast("ラベルをクリアしました");
         }
 
+        const DEFAULT_SECRET_CMD_TEXT = "⚠️systemに駒名変更！\n[ {名前} ] HP : n → n\n[ {名前} ] MP : n → n\n[ {名前} ] SAN : n → n\n[ {名前} ] 幸運 : n → n\n[ {名前} ] 暴走率 : n → n\n[ {名前} ] FREE : X → X";
+        let _secretCmdText = DEFAULT_SECRET_CMD_TEXT;
+        function syncSecretCmdText(el) {
+            _secretCmdText = el.value;
+            ["secret-cmd-edit", "secret-cmd-edit2", "secret-cmd-edit3"].forEach(id => {
+                const t = document.getElementById(id);
+                if (t && t !== el) t.value = _secretCmdText;
+            });
+            updateExport();
+        }
+        function applySecretCmdText(text) {
+            _secretCmdText = (text !== undefined && text !== null) ? text : DEFAULT_SECRET_CMD_TEXT;
+            ["secret-cmd-edit", "secret-cmd-edit2", "secret-cmd-edit3"].forEach(id => {
+                const t = document.getElementById(id);
+                if (t) t.value = _secretCmdText;
+            });
+        }
         function getSecretCmdLines() {
             const _rawName2 = document.getElementById("npc-name")?.value || "{名前}";
             const name = isStripEmojiOn() ? (stripEmoji(_rawName2) || _rawName2) : _rawName2;
-            return [
-                "⚠️systemに駒名変更！",
-                "[ " + name + " ] HP : n → n",
-                "[ " + name + " ] MP : n → n",
-                "[ " + name + " ] SAN : n → n",
-                "[ " + name + " ] 幸運 : n → n",
-                "[ " + name + " ] 暴走率 : n → n",
-                "[ " + name + " ] FREE : X → X"
-            ];
+            return (_secretCmdText || "").split("\n").map(l => l.replace(/\{名前\}/g, name));
         }
 
         function updateSecretCmdPreview() {
-            const on = document.getElementById("chk-secret-cmd")?.checked || false;
-            const lines = on ? getSecretCmdLines() : [];
-            ["secret-cmd-preview", "secret-cmd-preview2", "secret-cmd-preview3"].forEach(id => {
-                const el = document.getElementById(id);
-                if (!el) return;
-                el.textContent = on ? lines.join("\n") : "（チェックをONにすると表示）";
-            });
-
             // 特性値プレビュー更新
             const statOn = document.getElementById("chk-stat-vars2-detail")?.checked ?? true;
             const statLines = [];
@@ -5946,7 +5951,8 @@
                 noPalette: document.getElementById('koma-chk-no-palette')?.checked || false,
                 showStatus: document.getElementById('koma-chk-show-status')?.checked || false,
                 showParam: document.getElementById('koma-chk-show-param')?.checked || false,
-                fixedRollText: _fixedRollText
+                fixedRollText: _fixedRollText,
+                secretCmdText: _secretCmdText
             };
         }
 
@@ -5981,6 +5987,7 @@
             const showParamEl = document.getElementById('koma-chk-show-param');
             if (showParamEl) showParamEl.checked = !!s.showParam;
             applyFixedRollText(s.fixedRollText !== undefined ? s.fixedRollText : DEFAULT_FIXED_ROLL_TEXT);
+            applySecretCmdText(s.secretCmdText !== undefined ? s.secretCmdText : DEFAULT_SECRET_CMD_TEXT);
         }
         let _hideChatChar = false;
         let _invisible = false;
@@ -10151,6 +10158,7 @@ async function applyPartialOverwrite(id, isShared, fields, selectedMemos) {
 
             // 秘匿コマンド初期化
             applyFixedRollText(_fixedRollText);
+            applySecretCmdText(_secretCmdText);
             updateSecretCmdPreview();
         });
         // loadMemoLocal はDOMContentLoaded後に移動済みか確認。
