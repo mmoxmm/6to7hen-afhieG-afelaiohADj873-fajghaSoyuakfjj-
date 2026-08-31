@@ -2408,7 +2408,8 @@
             border: 1px solid rgba(40, 85, 160, 0.35);
             border-radius: var(--radius);
             padding: 4px 5px;
-            resize: vertical;
+            resize: none;
+            overflow: hidden;
             white-space: pre;
         }
 
@@ -3410,14 +3411,14 @@
                                 <label
                                     style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;color:var(--text2)">
                                     <input type="radio" name="koma-sep-space" id="koma-sep-before" value="before"
-                                        checked onchange="updateKomaJsonPreview()"
+                                        checked onchange="syncSepSpaceSetting(this)"
                                         style="cursor:pointer;accent-color:var(--accent)">
                                     앞에 빈 줄 삽입
                                 </label>
                                 <label
                                     style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;color:var(--text2)">
                                     <input type="radio" name="koma-sep-space" id="koma-sep-both" value="both"
-                                        onchange="updateKomaJsonPreview()"
+                                        onchange="syncSepSpaceSetting(this)"
                                         style="cursor:pointer;accent-color:var(--accent)">
                                     앞뒤에 빈 줄 삽입
                                 </label>
@@ -3793,19 +3794,19 @@
                                     <label
                                         style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:12px;color:var(--text2);margin-bottom:3px">
                                         <input type="radio" name="palette-mode" id="chk-auto-only" value="auto" checked
-                                            onchange="updateExport()" style="cursor:pointer;accent-color:var(--accent)">
+                                            onchange="syncStatTabSetting(this,'palette-mode')" style="cursor:pointer;accent-color:var(--accent)">
                                         🔄 자동 생성만
                                     </label>
                                     <label
                                         style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:12px;color:var(--text2);margin-bottom:3px">
                                         <input type="radio" name="palette-mode" id="chk-incl-manual" value="both"
-                                            onchange="updateExport()" style="cursor:pointer;accent-color:var(--accent)">
+                                            onchange="syncStatTabSetting(this,'palette-mode')" style="cursor:pointer;accent-color:var(--accent)">
                                         🔄자동＋✏️직접 입력
                                     </label>
                                     <label
                                         style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:12px;color:var(--text2)">
                                         <input type="radio" name="palette-mode" id="chk-manual-only" value="manual"
-                                            onchange="updateExport()" style="cursor:pointer;accent-color:var(--accent)">
+                                            onchange="syncStatTabSetting(this,'palette-mode')" style="cursor:pointer;accent-color:var(--accent)">
                                         ✏️ 직접 입력만
                                     </label>
                                 </div>
@@ -3816,14 +3817,14 @@
                                     <label
                                         style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:12px;color:var(--text2);margin-bottom:3px">
                                         <input type="radio" name="cmd-order" id="chk-order-sk-first" value="sk-first"
-                                            checked onchange="updateExport()"
+                                            checked onchange="syncStatTabSetting(this,'cmd-order')"
                                             style="cursor:pointer;accent-color:var(--accent)">
                                         🎯 기능 → ⚔️ 공격
                                     </label>
                                     <label
                                         style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:12px;color:var(--text2)">
                                         <input type="radio" name="cmd-order" id="chk-order-atk-first" value="atk-first"
-                                            onchange="updateExport()" style="cursor:pointer;accent-color:var(--accent)">
+                                            onchange="syncStatTabSetting(this,'cmd-order')" style="cursor:pointer;accent-color:var(--accent)">
                                         ⚔️ 공격 → 🎯 기능
                                     </label>
                                     <label
@@ -3839,19 +3840,19 @@
                                         코마 설정</div>
                                     <label
                                         style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:12px;color:var(--text2);margin-bottom:3px">
-                                        <input type="checkbox" id="chk-hide-status" onchange="updateExport()"
+                                        <input type="checkbox" id="chk-hide-status" onchange="syncKomaSetting(this)"
                                             style="cursor:pointer;accent-color:var(--accent);width:14px;height:14px">
                                         스테이터스 비공개
                                     </label>
                                     <label
                                         style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:12px;color:var(--text2);margin-bottom:3px">
-                                        <input type="checkbox" id="chk-hide-chat-char" onchange="updateExport()"
+                                        <input type="checkbox" id="chk-hide-chat-char" onchange="syncKomaSetting(this)"
                                             style="cursor:pointer;accent-color:var(--accent);width:14px;height:14px">
                                         발언 시 표시하지 않음
                                     </label>
                                     <label
                                         style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:12px;color:var(--text2);margin-bottom:3px">
-                                        <input type="checkbox" id="chk-invisible" onchange="updateExport()"
+                                        <input type="checkbox" id="chk-invisible" onchange="syncKomaSetting(this)"
                                             style="cursor:pointer;accent-color:var(--accent);width:14px;height:14px">
                                         캐릭터 목록 제외
                                     </label>
@@ -4071,19 +4072,19 @@
                                     <label
                                         style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:12px;color:var(--text2);margin-bottom:3px">
                                         <input type="radio" name="palette-mode2" value="auto" checked
-                                            onchange="updateExport()" style="cursor:pointer;accent-color:var(--accent)">
+                                            onchange="syncStatTabSetting(this,'palette-mode')" style="cursor:pointer;accent-color:var(--accent)">
                                         🔄 자동 생성만
                                     </label>
                                     <label
                                         style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:12px;color:var(--text2);margin-bottom:3px">
-                                        <input type="radio" name="palette-mode2" value="both" onchange="updateExport()"
+                                        <input type="radio" name="palette-mode2" value="both" onchange="syncStatTabSetting(this,'palette-mode')"
                                             style="cursor:pointer;accent-color:var(--accent)">
                                         🔄자동＋✏️직접 입력
                                     </label>
                                     <label
                                         style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:12px;color:var(--text2)">
                                         <input type="radio" name="palette-mode2" value="manual"
-                                            onchange="updateExport()" style="cursor:pointer;accent-color:var(--accent)">
+                                            onchange="syncStatTabSetting(this,'palette-mode')" style="cursor:pointer;accent-color:var(--accent)">
                                         ✏️ 직접 입력만
                                     </label>
                                 </div>
@@ -4094,13 +4095,13 @@
                                     <label
                                         style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:12px;color:var(--text2);margin-bottom:3px">
                                         <input type="radio" name="cmd-order2" value="sk-first" checked
-                                            onchange="updateExport()" style="cursor:pointer;accent-color:var(--accent)">
+                                            onchange="syncStatTabSetting(this,'cmd-order')" style="cursor:pointer;accent-color:var(--accent)">
                                         🎯 기능 → ⚔️ 공격
                                     </label>
                                     <label
                                         style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:12px;color:var(--text2)">
                                         <input type="radio" name="cmd-order2" value="atk-first"
-                                            onchange="updateExport()" style="cursor:pointer;accent-color:var(--accent)">
+                                            onchange="syncStatTabSetting(this,'cmd-order')" style="cursor:pointer;accent-color:var(--accent)">
                                         ⚔️ 공격 → 🎯 기능
                                     </label>
                                     <label
@@ -5901,7 +5902,7 @@
             _secretCmdText = el.value;
             ["secret-cmd-edit", "secret-cmd-edit2", "secret-cmd-edit3"].forEach(id => {
                 const t = document.getElementById(id);
-                if (t && t !== el) t.value = _secretCmdText;
+                if (t) { if (t !== el) t.value = _secretCmdText; autoExpand(t); }
             });
             updateExport();
         }
@@ -5909,7 +5910,7 @@
             _secretCmdText = (text !== undefined && text !== null) ? text : DEFAULT_SECRET_CMD_TEXT;
             ["secret-cmd-edit", "secret-cmd-edit2", "secret-cmd-edit3"].forEach(id => {
                 const t = document.getElementById(id);
-                if (t) t.value = _secretCmdText;
+                if (t) { t.value = _secretCmdText; autoExpand(t); }
             });
         }
         function getSecretCmdLines() {
@@ -6000,7 +6001,7 @@
             _fixedRollText = el.value;
             ["fixed-roll-edit", "fixed-roll-edit2", "fixed-roll-edit3"].forEach(id => {
                 const t = document.getElementById(id);
-                if (t && t !== el) t.value = _fixedRollText;
+                if (t) { if (t !== el) t.value = _fixedRollText; autoExpand(t); }
             });
             updateExport();
         }
@@ -6008,7 +6009,7 @@
             _fixedRollText = (text !== undefined && text !== null) ? text : DEFAULT_FIXED_ROLL_TEXT;
             ["fixed-roll-edit", "fixed-roll-edit2", "fixed-roll-edit3"].forEach(id => {
                 const t = document.getElementById(id);
-                if (t) t.value = _fixedRollText;
+                if (t) { t.value = _fixedRollText; autoExpand(t); }
             });
         }
         let _stripEmoji = true;   // 名前から絵文字を除去
@@ -6244,6 +6245,15 @@
             if (a) a.classList.toggle("open", o);
             if (id === "palette" && o) renderPalettePreview();
             if (id === "cons") { const fb = document.getElementById("cons-fold-btn"); if (fb) fb.textContent = o ? "▲" : "▼"; }
+            if ((id === "secret-cmd" || id === "secret-cmd2" || id === "secret-cmd3") && o) {
+                requestAnimationFrame(() => {
+                    ["fixed-roll-edit", "fixed-roll-edit2", "fixed-roll-edit3",
+                        "secret-cmd-edit", "secret-cmd-edit2", "secret-cmd-edit3"].forEach(tid => {
+                            const t = document.getElementById(tid);
+                            if (t) autoExpand(t);
+                        });
+                });
+            }
 
             if (o) {
                 // 攻撃⇔消耗品/呪文 ペア同時展開
@@ -7919,6 +7929,14 @@
 
         function setExportMode(mode) { exportMode = mode;["json", "text"].forEach(m => { const b = document.getElementById("exp-btn-" + m); if (b) b.className = "export-btn" + (m === mode ? "" : " sec"); const b2 = document.getElementById("exp-btn-" + m + "2"); if (b2) b2.className = "export-btn" + (m === mode ? "" : " sec"); }); const dl = document.getElementById("btn-dl-json"); if (dl) dl.style.display = mode === "json" ? "inline-flex" : "none"; const dl2 = document.getElementById("btn-dl-json2"); if (dl2) dl2.style.display = mode === "json" ? "inline-flex" : "none"; updateExport(); }
 
+        function syncSepSpaceSetting(el) {
+            const val = el.value;
+            document.querySelectorAll('input[name="koma-sep-space"], input[name="koma-sep-space2"], input[name="koma-sep-space3"], input[name="koma-sep-space4"]').forEach(r => {
+                r.checked = r.value === val;
+            });
+            updateKomaJsonPreview();
+        }
+
         function syncKomaSetting(el) {
             // グローバル変数に値を保存（これが唯一の真の値）
             const keyMap = {
@@ -8739,7 +8757,7 @@
 
         function syncStatTabSetting(el, groupName) {
             const val = el.value;
-            document.querySelectorAll('input[name="' + groupName + '"], input[name="' + groupName + '2"]').forEach(r => {
+            document.querySelectorAll('input[name="' + groupName + '"], input[name="' + groupName + '2"], input[name="' + groupName + '3"]').forEach(r => {
                 r.checked = r.value === val;
             });
             updateExport();
@@ -9501,6 +9519,7 @@ function showPartialOverwriteModal(targets) {
     const alwaysFields = [
         { key: 'fixedRoll', label: '固定ロール<br>（自動追加コマンド設定・上書き）', default: false },
         { key: 'extraParam', label: '追加ステータス（新規追加のみ）', default: false },
+        { key: 'secretCmd', label: '秘匿タブ向けコマンド<br>（自動追加コマンド設定・上書き）', default: false },
         { key: 'nameColor', label: '名前・カラーコード（上書き）', default: false },
     ];
     // 「ステータス数値」として折りたたむ項目
@@ -9619,8 +9638,10 @@ async function applyPartialOverwrite(id, isShared, fields, selectedMemos) {
         merged.extraParams = r.list; addedTotal += r.addedCount;
     }
 
-    if (fields.includes('fixedRoll')) {
-        merged.settings = { ...(existing.settings || {}), fixedRollText: cur.settings.fixedRollText };
+    if (fields.includes('fixedRoll') || fields.includes('secretCmd')) {
+        merged.settings = { ...(existing.settings || {}) };
+        if (fields.includes('fixedRoll')) merged.settings.fixedRollText = cur.settings.fixedRollText;
+        if (fields.includes('secretCmd')) merged.settings.secretCmdText = cur.settings.secretCmdText;
     }
 
     if (fields.includes('stats')) {
@@ -10160,6 +10181,13 @@ async function applyPartialOverwrite(id, isShared, fields, selectedMemos) {
             applyFixedRollText(_fixedRollText);
             applySecretCmdText(_secretCmdText);
             updateSecretCmdPreview();
+            requestAnimationFrame(() => {
+                ["fixed-roll-edit", "fixed-roll-edit2", "fixed-roll-edit3",
+                    "secret-cmd-edit", "secret-cmd-edit2", "secret-cmd-edit3"].forEach(tid => {
+                        const t = document.getElementById(tid);
+                        if (t) autoExpand(t);
+                    });
+            });
         });
         // loadMemoLocal はDOMContentLoaded後に移動済みか確認。
         // グローバル実行順を明示するため以下の順序を保証
